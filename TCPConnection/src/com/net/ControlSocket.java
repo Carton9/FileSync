@@ -3,6 +3,8 @@ package com.net;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.InetAddress;
@@ -14,7 +16,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.locks.Lock;
 
 public class ControlSocket {
 	private final static String CONTROLCONNECT="CSCO";
@@ -28,7 +35,6 @@ public class ControlSocket {
 	private final static String PACKETFRAME="PKFM";
 	private final static String STREAMFRAME="SMFM";
 	private final static String PTSTREAMFRAME="PTFM";
-	private final static String SYNCINFOFRAME="SIFM";
 	
 	private final static String DATAPIPESYNC="DPSC";
 	private final static int commendLength=4;
@@ -36,10 +42,11 @@ public class ControlSocket {
 	private Socket controlPipe;
 	private ServerSocket controlListenerPipe;
 	public HashMap<String,Socket> dataSocketMap;
-	public HashMap<String,Socket> Map;
+	public HashMap<Socket,ObjectLock> LockMap;
 	private InetAddress ip;private int port;
 	DataInputStream cis;
 	DataOutputStream cos;
+	ExecutorService pool;
 	public ControlSocket(InetAddress ip,int port) throws IOException {
 		controlPipe=new Socket(ip,port);
 		controlPipe.getOutputStream().write(CONTROLCONNECT.getBytes());
@@ -53,6 +60,8 @@ public class ControlSocket {
 			throw new IOException("no reply");
 		}
 		dataSocketMap=new HashMap<String,Socket>();
+		LockMap=new HashMap<Socket,ObjectLock>();
+		pool=Executors.newFixedThreadPool(2000);
 	}
 	public ControlSocket(int port) throws IOException {
 		controlListenerPipe=new ServerSocket(port);
@@ -69,8 +78,10 @@ public class ControlSocket {
 			throw new IOException("no reply");
 		}
 		dataSocketMap=new HashMap<String,Socket>();
+		LockMap=new HashMap<Socket,ObjectLock>();
 		cis=new DataInputStream(controlPipe.getInputStream());
 		cos=new DataOutputStream(controlPipe.getOutputStream());
+		pool=Executors.newFixedThreadPool(2000);
 	}
 	public ControlSocket(String ip,int port) throws IOException {
 		this(InetAddress.getByName(ip),port);
@@ -97,6 +108,7 @@ public class ControlSocket {
 	}
 	public void listenControlPipe() throws IOException {
 		String commend=recevieCommend();
+		TCPFrame frame=null;
 		if(commend.equals(PACKETFRAME)) {
 			writeCommend(ACCEPT);
 			commend=recevieCommend();
@@ -110,8 +122,72 @@ public class ControlSocket {
 				ArrayList<String> keyset=getDataSync();
 			}
 		}else if(commend.equals(PTSTREAMFRAME)) {
-			
+			writeCommend(ACCEPT);
+			commend=recevieCommend();
+			if(commend.equals(DATAPIPESYNC)) {
+				ArrayList<String> keyset=getDataSync();
+			}
 		}
+		if(frame!=null) {
+			loadRunnableFrame(frame);
+		}
+	}
+	public String requireDataSocket() throws IOException {
+		Socket dataSocket=new Socket(ip,port); 
+		dataSocket.getOutputStream().write(DATACONNECT.getBytes());
+		DataInputStream dis=new DataInputStream(dataSocket.getInputStream());
+		DataOutputStream dos=new DataOutputStream(dataSocket.getOutputStream());
+		byte[] recevie=new byte[commendLength];
+		dataSocket.getInputStream().read(recevie);
+		if((new String(recevie)).equals(ACCEPT)) {
+			recevie=new byte[commendLength];
+			dataSocket.getInputStream().read(recevie);
+			if((new String(recevie)).equals(SYNCSIGN)) {
+				int dataLength=dis.readInt();
+				byte buff[]=new byte[dataLength];
+				dataSocket.getInputStream().read(buff);
+				dataSocket.getOutputStream().write(CONFIRM.getBytes());
+				dataSocketMap.put(new String(buff), dataSocket);
+				LockMap.put(dataSocket, new ObjectLock());
+				return new String(buff);
+			}
+		}
+		return "";
+	}
+	public HashMap<String,BiUnit<InputStream,OutputStream>> loadPipes(String[] keys) throws IOException{
+		HashMap<String,BiUnit<InputStream,OutputStream>> result=new HashMap<String,BiUnit<InputStream,OutputStream>>();
+		for(int i=0;i<keys.length;i++) {
+			BiUnit<InputStream,OutputStream> unit=new BiUnit<InputStream,OutputStream>();
+			unit.setK(dataSocketMap.get(keys[i]).getInputStream());
+			unit.setO(dataSocketMap.get(keys[i]).getOutputStream());
+			result.put(keys[i], unit);
+		}
+		return result;
+	}
+	public void loadRunnableFrame(TCPFrame frame) throws IOException {
+		boolean success=frame.init(getMutilDataSocket(frame.getRequirePipeSize()), this);
+		if(success) {
+			pool.execute(new Runnable() {
+				@Override
+				public void run() {
+					frame.execute();
+				}
+			});
+		}
+	}
+	public void loadRunnableFrames(List<TCPFrame> frames) throws IOException {
+		for(TCPFrame i:frames) {
+			loadRunnableFrame(i);
+		}
+	}
+	public String[] getMutilDataSocket(int size) throws IOException {
+		ArrayList<String> dataSocketList=new ArrayList<String>();
+		for(int i=0;i<size;i++) {
+			String result=requireDataSocket();
+			if(!result.equals(""))
+				dataSocketList.add(result);
+		}
+		return dataSocketList.toArray(new String[dataSocketList.size()]);
 	}
 	private ArrayList<String> getDataSync() throws IOException{
 		int totalCount=cis.readInt();
@@ -131,30 +207,6 @@ public class ControlSocket {
 			return linkDataPipe;
 		}
 	}
-	public String requireDataSocket() throws IOException {
-		Socket dataSocket=new Socket(ip,port); 
-		dataSocket.getOutputStream().write(DATACONNECT.getBytes());
-		DataInputStream dis=new DataInputStream(dataSocket.getInputStream());
-		DataOutputStream dos=new DataOutputStream(dataSocket.getOutputStream());
-		byte[] recevie=new byte[commendLength];
-		dataSocket.getInputStream().read(recevie);
-		if((new String(recevie)).equals(ACCEPT)) {
-			recevie=new byte[commendLength];
-			dataSocket.getInputStream().read(recevie);
-			if((new String(recevie)).equals(SYNCSIGN)) {
-				int dataLength=dis.readInt();
-				byte buff[]=new byte[dataLength];
-				dataSocket.getInputStream().read(buff);
-				dataSocket.getOutputStream().write(CONFIRM.getBytes());
-				dataSocketMap.put(new String(buff), dataSocket);
-				return new String(buff);
-			}
-		}
-		return "";
-	}
-	public void loadFrame(TCPFrame frame) {
-		
-	}
 	private void writeCommend(String commend) throws IOException {
 		if(commend.length()>commendLength)
 			return;
@@ -164,13 +216,6 @@ public class ControlSocket {
 		byte[] recevie=new byte[commendLength];
 		controlPipe.getInputStream().read(recevie);
 		return new String(recevie);
-	}
-	public String[] getMutilDataSocket(int size) throws IOException {
-		ArrayList<String> dataSocketList=new ArrayList<String>();
-		for(int i=0;i<size;i++) {
-			dataSocketList.add(requireDataSocket());
-		}
-		return dataSocketList.toArray(new String[dataSocketList.size()]);
 	}
 	private String SHA512(String strText)  
 	  {  
