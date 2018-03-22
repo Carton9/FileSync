@@ -112,26 +112,12 @@ public class ControlSocket {
 	public void listenControlPipe() throws IOException {
 		String commend=recevieCommend();
 		TCPFrame frame=null;
-		if(commend.equals(PACKETFRAME)) {
-			writeCommend(ACCEPT);
-			commend=recevieCommend();
-			if(commend.equals(DATAPIPESYNC)) {
-				ArrayList<String> keyset=getDataSync();
-				frame=new ObejctFrame();
-				frame.init(keyset.toArray(new String[keyset.size()]), this);
-			}
-		}else if(commend.equals(STREAMFRAME)) {
-			writeCommend(ACCEPT);
-			commend=recevieCommend();
-			if(commend.equals(DATAPIPESYNC)) {
-				ArrayList<String> keyset=getDataSync();
-			}
-		}else if(commend.equals(PTSTREAMFRAME)) {
-			writeCommend(ACCEPT);
-			commend=recevieCommend();
-			if(commend.equals(DATAPIPESYNC)) {
-				ArrayList<String> keyset=getDataSync();
-			}
+		frame=TCPFrame.createFrame(commend);
+		writeCommend(ACCEPT);
+		commend=recevieCommend();
+		if(commend.equals(DATAPIPESYNC)) {
+			ArrayList<String> keyset=getDataSync();
+			frame.init(keyset.toArray(new String[keyset.size()]), this);
 		}
 		if(frame!=null) {
 			loadRunnableFrame(frame);

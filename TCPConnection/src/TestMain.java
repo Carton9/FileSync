@@ -2,9 +2,12 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 
 import com.net.ControlSocket;
 import com.net.ObejctFrame;
+import com.net.TCPFrame;
 
 public class TestMain {
 	static ControlSocket Ssocket=null;
@@ -63,9 +66,10 @@ public class TestMain {
 		};
 		p.start();
 		c2.start();
-		ArrayList<Integer> b=new ArrayList<Integer>();
+		List<Integer> b=new ArrayList<Integer>();
 		b.add(1);
-		ObejctFrame<ArrayList> of=new ObejctFrame<ArrayList>(b);
+		//ObejctFrame<ArrayList> of=new ObejctFrame<ArrayList>(b);
+		TCPFrame of=TCPFrame.createFrame(b);
 		Csocket.submitFrame(of);
 	}
 	

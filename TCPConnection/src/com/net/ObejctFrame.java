@@ -69,7 +69,7 @@ public class ObejctFrame<T> extends TCPFrame {
 			this.data=new byte[dataSize];
 			unit.getK().read(data);
 			try {
-				System.out.print((ArrayList)Deserialize(data));
+				System.out.print(Deserialize(data).getClass());
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -100,5 +100,9 @@ public class ObejctFrame<T> extends TCPFrame {
         objectOutputStream.close();        
         byteArrayOutputStream.close();  
         return output;
+	}
+	@Override
+	protected Object result() {
+		return object;
 	}
 }
