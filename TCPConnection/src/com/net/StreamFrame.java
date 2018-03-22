@@ -8,11 +8,12 @@ import java.io.OutputStream;
 import java.util.HashMap;
 
 public class StreamFrame extends TCPFrame {
-	FileIO io;
+	public FileIO io;
 	private final static String IntegerType="INTE";
 	private final static String LongType="LONG";
 	public StreamFrame() {
 		super();
+		io=super.getTempFile();
 		this.frameType=ControlSocket.STREAMFRAME;
 		this.RequirePipeSize=1;
 	}
@@ -26,7 +27,8 @@ public class StreamFrame extends TCPFrame {
 	protected boolean init() {
 		if(isRecevie)
 			io=super.getTempFile();
-		return false;
+		this.successInit=true;
+		return true;
 	}
 
 	@Override
@@ -34,7 +36,6 @@ public class StreamFrame extends TCPFrame {
 		try {
 			HashMap<String,BiUnit<InputStream,OutputStream>> map=this.loadedSocket.loadPipes(dataPipeList);
 			BiUnit<InputStream,OutputStream> unit=map.get(dataPipeList[0]);
-			
 			DataOutputStream dos=new DataOutputStream(unit.getO());
 			long size=io.fileSize();
 			if(size<Integer.MAX_VALUE) {

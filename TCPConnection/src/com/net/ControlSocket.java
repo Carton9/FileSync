@@ -164,11 +164,9 @@ public class ControlSocket {
 		this.writeInt(this.controlPipe.getOutputStream(), dataSocket.length);
 		for(int i=0;i<dataSocket.length;i++) {
 			this.writeInt(this.controlPipe.getOutputStream(), dataSocket[i].length());
-			System.out.println("submitFrame "+dataSocket[i].length());
 			controlPipe.getOutputStream().write(dataSocket[i].getBytes());
 		}
 		frame.init(dataSocket, this);
-		
 		return loadRunnableFrame(frame);
 	}
 	public boolean submitFrame(List<TCPFrame> frames) throws IOException {
@@ -183,11 +181,9 @@ public class ControlSocket {
 		boolean success=frame.successInit;
 		if(success) {
 			
-			
 			pool.execute(new Runnable() {
 				@Override
 				public void run() {
-					
 					frame.execute();
 					
 				}

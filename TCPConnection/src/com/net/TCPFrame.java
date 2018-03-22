@@ -58,6 +58,9 @@ public abstract class TCPFrame{
 	public static<T> TCPFrame createFrame(T Object) {
 		return new ObejctFrame<T>(Object);
 	}
+	public static<T> TCPFrame createFrame(FileIO Object) {
+		return new StreamFrame(Object);
+	}
 	public static<T> T unpackPacket(TCPFrame frame) {
 		if(frame.getFrameType()!=ControlSocket.PACKETFRAME)
 			return null;

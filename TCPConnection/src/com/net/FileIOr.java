@@ -14,16 +14,28 @@ import java.nio.file.attribute.FileAttribute;
  *
  */
 public class FileIOr implements FileIO {
-	File loadedFile=null;
+	public File loadedFile=null;
+	FileInputStream fis;
+	FileOutputStream fos;
 	@Override
 	public void load(File file) {
 		// TODO Auto-generated method stub
-
+		try {
+			this.loadedFile=file;
+			fis=new FileInputStream(loadedFile);
+			fos=new FileOutputStream(loadedFile,true);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	@Override
 	public void loadTemp() {
 		try {
 			loadedFile=File.createTempFile("Temp", ".tp");
+			System.out.print(loadedFile.getAbsolutePath());
+			fis=new FileInputStream(loadedFile);
+			fos=new FileOutputStream(loadedFile);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -34,7 +46,7 @@ public class FileIOr implements FileIO {
 		// TODO Auto-generated method stub
 		byte data[]=new byte[size];
 		try {
-			(new FileInputStream(loadedFile)).read(data);
+			fis.read(data);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			return null;
@@ -45,7 +57,7 @@ public class FileIOr implements FileIO {
 	public boolean write(byte[] data) {
 		// TODO Auto-generated method stub
 		try {
-			(new FileOutputStream(loadedFile)).write(data);
+			fos.write(data);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			return false;
@@ -55,18 +67,13 @@ public class FileIOr implements FileIO {
 	@Override
 	public long fileSize() {
 		// TODO Auto-generated method stub
-		try {
-			return (new FileOutputStream(loadedFile)).getChannel().size();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			return -1;
-		}
+		return loadedFile.length();
 	}
 	@Override
 	public int read() {
 		// TODO Auto-generated method stub
 		try {
-			return (new FileInputStream(loadedFile)).read();
+			return fis.read();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			return -1;
@@ -76,7 +83,7 @@ public class FileIOr implements FileIO {
 	public boolean write(byte data) {
 		// TODO Auto-generated method stub
 		try {
-			(new FileOutputStream(loadedFile)).write(data);
+			fos.write(data);
 			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
