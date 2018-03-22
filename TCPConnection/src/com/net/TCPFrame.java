@@ -10,16 +10,17 @@ public abstract class TCPFrame{
 	String frameType;
 	TCPFrame(){
 		isRecevie=true;
-		
 	}
 	public String getFrameType() {
 		return frameType;
 	}
 	public void execute() {
+		
 		if(isRecevie) 
 			successProcess=this.recevie();	
 		else
 			successProcess=this.send();
+		
 	}
 	public int getRequirePipeSize() {
 		return RequirePipeSize;
@@ -27,9 +28,11 @@ public abstract class TCPFrame{
 	public boolean init(String dataPipeList[],ControlSocket loadedSocket) {
 		if(RequirePipeSize!=dataPipeList.length)
 			return false;
+		
 		this.dataPipeList=dataPipeList;
 		this.loadedSocket=loadedSocket;
-		return this.init();
+		successInit=this.init();
+		return successInit;
 	}
 	protected abstract boolean init();
 	protected abstract boolean send();

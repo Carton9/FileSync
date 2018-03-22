@@ -2,6 +2,7 @@ package com.net;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,9 +33,9 @@ public class ControlSocket {
 	private final static String SYNCSIGN="SYSI";
 	private final static String CONFIRM="CONF";
 	
-	private final static String PACKETFRAME="PKFM";
-	private final static String STREAMFRAME="SMFM";
-	private final static String PTSTREAMFRAME="PTFM";
+	public final static String PACKETFRAME="PKFM";
+	public final static String STREAMFRAME="SMFM";
+	public final static String PTSTREAMFRAME="PTFM";
 	
 	private final static String DATAPIPESYNC="DPSC";
 	private final static int commendLength=4;
@@ -61,6 +62,8 @@ public class ControlSocket {
 		}
 		dataSocketMap=new HashMap<String,Socket>();
 		LockMap=new HashMap<Socket,ObjectLock>();
+		cis=new DataInputStream(controlPipe.getInputStream());
+		cos=new DataOutputStream(controlPipe.getOutputStream());
 		pool=Executors.newFixedThreadPool(2000);
 	}
 	public ControlSocket(int port) throws IOException {
@@ -114,6 +117,8 @@ public class ControlSocket {
 			commend=recevieCommend();
 			if(commend.equals(DATAPIPESYNC)) {
 				ArrayList<String> keyset=getDataSync();
+				frame=new ObejctFrame();
+				frame.init(keyset.toArray(new String[keyset.size()]), this);
 			}
 		}else if(commend.equals(STREAMFRAME)) {
 			writeCommend(ACCEPT);
@@ -164,21 +169,53 @@ public class ControlSocket {
 		}
 		return result;
 	}
-	public void loadRunnableFrame(TCPFrame frame) throws IOException {
-		boolean success=frame.init(getMutilDataSocket(frame.getRequirePipeSize()), this);
+	public boolean submitFrame(TCPFrame frame) throws IOException {
+		String dataSocket[]=getMutilDataSocket(frame.getRequirePipeSize());
+		writeCommend(frame.getFrameType());
+		if(!recevieCommend().equals(ACCEPT))
+			return false;
+		writeCommend(DATAPIPESYNC);
+		this.writeInt(this.controlPipe.getOutputStream(), dataSocket.length);
+		for(int i=0;i<dataSocket.length;i++) {
+			this.writeInt(this.controlPipe.getOutputStream(), dataSocket[i].length());
+			System.out.println("submitFrame "+dataSocket[i].length());
+			controlPipe.getOutputStream().write(dataSocket[i].getBytes());
+		}
+		frame.init(dataSocket, this);
+		
+		return loadRunnableFrame(frame);
+	}
+	public boolean submitFrame(List<TCPFrame> frames) throws IOException {
+		for(TCPFrame i:frames) {
+			if(!submitFrame(i))
+				return false;
+		}
+		return true;
+	}
+	public boolean loadRunnableFrame(TCPFrame frame) throws IOException {
+		
+		boolean success=frame.successInit;
 		if(success) {
+			
+			
 			pool.execute(new Runnable() {
 				@Override
 				public void run() {
+					
 					frame.execute();
+					
 				}
 			});
+			return true;
 		}
+		return false;
 	}
-	public void loadRunnableFrames(List<TCPFrame> frames) throws IOException {
+	public boolean loadRunnableFrames(List<TCPFrame> frames) throws IOException {
 		for(TCPFrame i:frames) {
-			loadRunnableFrame(i);
+			if(!loadRunnableFrame(i))
+				return false;
 		}
+		return true;
 	}
 	public String[] getMutilDataSocket(int size) throws IOException {
 		ArrayList<String> dataSocketList=new ArrayList<String>();
@@ -190,21 +227,70 @@ public class ControlSocket {
 		return dataSocketList.toArray(new String[dataSocketList.size()]);
 	}
 	private ArrayList<String> getDataSync() throws IOException{
-		int totalCount=cis.readInt();
+		int totalCount=readInt(this.controlPipe.getInputStream());
+		ArrayList<String> linkDataPipe=new ArrayList<String>();
 		if(MaxDataPipePerFrame<totalCount) {
 			return null;
 		}else {
-			ArrayList<String> linkDataPipe=new ArrayList<String>();
+			
 			for(int i=0;i<totalCount;i++) {
-				int dataLength=cis.readInt();
-				byte buff[]=new byte[dataLength];
+				int dataLength=readInt(cis);
+				byte buff[]=new byte[512];
 				controlPipe.getInputStream().read(buff);
-				String key=(new String(buff));
-				if(dataSocketMap.containsKey(key)) {
-					linkDataPipe.add(key);
+				String key=(new String(buff)).trim();
+				for(String c:dataSocketMap.keySet()) {
+					if(c.equals(key)) {
+						linkDataPipe.add(key);
+						
+					}
+					
 				}
+				
 			}
 			return linkDataPipe;
+		}
+	}
+	public void closeSendingDataPipe(String key){
+		Socket dataPipe=dataSocketMap.remove(key);
+		LockMap.remove(dataPipe);
+		try {
+			dataPipe.getOutputStream().write(DISCONNECT.getBytes());
+			dataPipe.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.out.print(e);
+		}
+		
+	}
+	public void closeSendingDataPipe(String key[]){
+		for(String i:key) {
+			closeSendingDataPipe(i);
+		}
+	}
+	public void closeReceiveDataPipe(String key[]) {
+		for(String i:key) {
+			closeReceiveDataPipe(i);
+		}
+	}
+	public void closeReceiveDataPipe(String key) {
+		Socket dataPipe=dataSocketMap.get(key);
+		byte[] recevie=new byte[commendLength];
+		try {
+			dataPipe.getInputStream().read(recevie);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.out.println(e);
+		}
+		String command=new String(recevie);
+		if(command.equals(DISCONNECT)) {
+			dataSocketMap.remove(key);
+			LockMap.remove(dataPipe);
+			try {
+				dataPipe.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				System.out.println(e);
+			}
 		}
 	}
 	private void writeCommend(String commend) throws IOException {
@@ -251,4 +337,16 @@ public class ControlSocket {
 	  
 	    return strResult;  
 	  }
+	public final int readInt(InputStream in) throws IOException {
+		int length=in.read();
+		System.out.println("readInt "+length);
+		byte data[]=new byte[length];
+		in.read(data);
+		return Integer.parseInt(new String(data));
+    }
+	public final void writeInt(OutputStream out,int v) throws IOException {
+		String data=v+"";
+		out.write((byte)data.length());
+		out.write(data.getBytes());
+    }
 }
