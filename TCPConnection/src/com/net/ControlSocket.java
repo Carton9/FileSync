@@ -170,11 +170,38 @@ public class ControlSocket {
 		for(int i=0;i<dataSocket.length;i++) {
 			this.writeInt(this.controlPipe.getOutputStream(), dataSocket[i].length());
 			controlPipe.getOutputStream().write(dataSocket[i].getBytes());
+			controlPipe.getOutputStream().flush();
 			System.out.println(i);
 		}
 		
 		frame.init(dataSocket, this);
 		return loadRunnableFrame(frame);
+	}
+	private ArrayList<String> getDataSync() throws IOException{
+		int totalCount=readInt(this.controlPipe.getInputStream());
+		ArrayList<String> linkDataPipe=new ArrayList<String>();
+		
+		if(MaxDataPipePerFrame<totalCount) {
+			
+			return null;
+		}else {
+			
+			for(int i=0;i<totalCount;i++) {
+				int dataLength=readInt(this.controlPipe.getInputStream());
+				byte buff[]=new byte[dataLength];
+				controlPipe.getInputStream().read(buff);
+				String key=(new String(buff)).trim();
+				for(String c:dataSocketMap.keySet()) {
+					if(c.equals(key)) {
+						linkDataPipe.add(key);
+						
+					}
+					System.out.println(key+" "+c);
+				}
+				
+			}
+			return linkDataPipe;
+		}
 	}
 	public boolean submitFrame(List<TCPFrame> frames) throws IOException {
 		for(TCPFrame i:frames) {
@@ -214,32 +241,6 @@ public class ControlSocket {
 				dataSocketList.add(result);
 		}
 		return dataSocketList.toArray(new String[dataSocketList.size()]);
-	}
-	private ArrayList<String> getDataSync() throws IOException{
-		int totalCount=readInt(this.controlPipe.getInputStream());
-		ArrayList<String> linkDataPipe=new ArrayList<String>();
-		
-		if(MaxDataPipePerFrame<totalCount) {
-			
-			return null;
-		}else {
-			
-			for(int i=0;i<totalCount;i++) {
-				int dataLength=readInt(cis);
-				byte buff[]=new byte[512];
-				controlPipe.getInputStream().read(buff);
-				String key=(new String(buff)).trim();
-				for(String c:dataSocketMap.keySet()) {
-					if(c.equals(key)) {
-						linkDataPipe.add(key);
-						
-					}
-					
-				}
-				
-			}
-			return linkDataPipe;
-		}
 	}
 	public void closeSendingDataPipe(String key){
 		closeSendingDataPipe(key,true);
@@ -357,7 +358,7 @@ public class ControlSocket {
 		
 		byte data[]=new byte[length];
 		in.read(data);
-		System.out.println("readInt "+new String(data));
+		System.out.println("readInt "+length+" "+new String(data));
 		return Integer.parseInt(new String(data));
     }
 	public final void writeInt(OutputStream out,int v) throws IOException {

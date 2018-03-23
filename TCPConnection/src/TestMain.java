@@ -78,6 +78,7 @@ public class TestMain {
 			TCPFrame of=TCPFrame.createFrame(io);
 			System.out.println(of.getClass());
 			Csocket.submitFrame(of);
+			//System.out.println("send");
 		}
 		
 	}

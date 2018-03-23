@@ -15,12 +15,12 @@ public class StreamFrame extends TCPFrame {
 		super();
 		io=super.getTempFile();
 		this.frameType=ControlSocket.STREAMFRAME;
-		this.RequirePipeSize=1;
+		this.RequirePipeSize=5;
 	}
 	public StreamFrame(FileIO io) {
 		this.io=io;
 		this.frameType=ControlSocket.STREAMFRAME;
-		this.RequirePipeSize=1;
+		this.RequirePipeSize=5;
 		this.isRecevie=false;
 	}
 	@Override
