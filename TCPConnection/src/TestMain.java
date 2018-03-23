@@ -71,13 +71,15 @@ public class TestMain {
 		List<Integer> b=new ArrayList<Integer>();
 		b.add(1);
 		//ObejctFrame<ArrayList> of=new ObejctFrame<ArrayList>(b);
-		UniversalFileIO io=new UniversalFileIO(new File("Test.txt"));
-		TCPFrame of=TCPFrame.createFrame(io);
-		System.out.println(of.getClass());
-		Csocket.submitFrame(of);
-		while(true) {
-			//System.out.println(Ssocket.dataSocketMap.size());
+		
+		for(int i=0;i<10000;i++) {
+			UniversalFileIO io=new UniversalFileIO(null,-1,false);
+			io.load(new File("Test.txt"));
+			TCPFrame of=TCPFrame.createFrame(io);
+			System.out.println(of.getClass());
+			Csocket.submitFrame(of);
 		}
+		
 	}
 	
 	 public static void writeInt(int v) throws IOException {
