@@ -22,6 +22,9 @@ public class ObjectLock {
 		}
 		return false;
 	}
+	public synchronized boolean state() {
+		return lock.get();
+	}
 	public synchronized void unlock() {
 		lock.set(false);
 	}

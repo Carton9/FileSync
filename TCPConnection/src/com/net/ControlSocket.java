@@ -107,6 +107,7 @@ public class ControlSocket {
 			if((new String(recevie)).equals(CONFIRM)) {
 				dataSocketMap.put(sign, socket);
 			}
+			
 		}
 	}
 	public void listenControlPipe() throws IOException {
@@ -117,8 +118,11 @@ public class ControlSocket {
 		commend=recevieCommend();
 		if(commend.equals(DATAPIPESYNC)) {
 			ArrayList<String> keyset=getDataSync();
+			
 			frame.init(keyset.toArray(new String[keyset.size()]), this);
+			
 		}
+		
 		if(frame!=null) {
 			loadRunnableFrame(frame);
 		}
@@ -162,10 +166,13 @@ public class ControlSocket {
 			return false;
 		writeCommend(DATAPIPESYNC);
 		this.writeInt(this.controlPipe.getOutputStream(), dataSocket.length);
+		
 		for(int i=0;i<dataSocket.length;i++) {
 			this.writeInt(this.controlPipe.getOutputStream(), dataSocket[i].length());
 			controlPipe.getOutputStream().write(dataSocket[i].getBytes());
+			System.out.println(i);
 		}
+		
 		frame.init(dataSocket, this);
 		return loadRunnableFrame(frame);
 	}
@@ -211,7 +218,9 @@ public class ControlSocket {
 	private ArrayList<String> getDataSync() throws IOException{
 		int totalCount=readInt(this.controlPipe.getInputStream());
 		ArrayList<String> linkDataPipe=new ArrayList<String>();
+		
 		if(MaxDataPipePerFrame<totalCount) {
+			
 			return null;
 		}else {
 			
@@ -345,9 +354,10 @@ public class ControlSocket {
 	  }
 	public final int readInt(InputStream in) throws IOException {
 		int length=in.read();
-		System.out.println("readInt "+length);
+		
 		byte data[]=new byte[length];
 		in.read(data);
+		System.out.println("readInt "+new String(data));
 		return Integer.parseInt(new String(data));
     }
 	public final void writeInt(OutputStream out,int v) throws IOException {

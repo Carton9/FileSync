@@ -48,6 +48,7 @@ public abstract class TCPFrame{
 			return new ObejctFrame();
 		}
 		if(commend.equals(ControlSocket.PTSTREAMFRAME)) {
+			
 			return new PTFrame();
 		}
 		if(commend.equals(ControlSocket.STREAMFRAME)) {
@@ -58,8 +59,18 @@ public abstract class TCPFrame{
 	public static<T> TCPFrame createFrame(T Object) {
 		return new ObejctFrame<T>(Object);
 	}
-	public static<T> TCPFrame createFrame(FileIO Object) {
-		return new StreamFrame(Object);
+	public static TCPFrame createFrame(FileIO Object) {
+		if(Object.mappedMode())
+			return new PTFrame(Object);
+		else
+			return new StreamFrame(Object);
+	}
+	public static<T> TCPFrame createFrame(File file) {
+		UniversalFileIO io=new UniversalFileIO(file);
+		if(io.mappedMode())
+			return new PTFrame(io);
+		else
+			return new StreamFrame(io);
 	}
 	public static<T> T unpackPacket(TCPFrame frame) {
 		if(frame.getFrameType()!=ControlSocket.PACKETFRAME)
@@ -77,8 +88,7 @@ public abstract class TCPFrame{
 		return (FileIO)frame.result();
 	}
 	protected static FileIO getTempFile() {
-		FileIO io=new FileIOr();
-		io.loadTemp();
+		FileIO io=new UniversalFileIO();
 		return io;
 	}
 }

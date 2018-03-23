@@ -11,4 +11,7 @@ public interface FileIO {
 	public int read();
 	public boolean write(byte data);
 	public long fileSize();
+	public Block getBlock();
+	public boolean mappedMode();
+	public int BlockCount();
 }
