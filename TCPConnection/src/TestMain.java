@@ -7,9 +7,9 @@ import java.util.HashSet;
 import java.util.List;
 
 import com.net.ControlSocket;
-import com.net.FileIOr;
 import com.net.ObejctFrame;
 import com.net.TCPFrame;
+import com.net.UniversalFileIO;
 
 public class TestMain {
 	static ControlSocket Ssocket=null;
@@ -71,10 +71,16 @@ public class TestMain {
 		List<Integer> b=new ArrayList<Integer>();
 		b.add(1);
 		//ObejctFrame<ArrayList> of=new ObejctFrame<ArrayList>(b);
-		FileIOr io=new FileIOr();
-		io.load(new File("Test.txt"));
-		TCPFrame of=TCPFrame.createFrame(io);
-		Csocket.submitFrame(of);
+		
+		for(int i=0;i<10000;i++) {
+			UniversalFileIO io=new UniversalFileIO(null,-1,false);
+			io.load(new File("Test.txt"));
+			TCPFrame of=TCPFrame.createFrame(io);
+			System.out.println(of.getClass());
+			Csocket.submitFrame(of);
+			//System.out.println("send");
+		}
+		
 	}
 	
 	 public static void writeInt(int v) throws IOException {

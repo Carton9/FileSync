@@ -15,12 +15,12 @@ public class StreamFrame extends TCPFrame {
 		super();
 		io=super.getTempFile();
 		this.frameType=ControlSocket.STREAMFRAME;
-		this.RequirePipeSize=1;
+		this.RequirePipeSize=5;
 	}
 	public StreamFrame(FileIO io) {
 		this.io=io;
 		this.frameType=ControlSocket.STREAMFRAME;
-		this.RequirePipeSize=1;
+		this.RequirePipeSize=5;
 		this.isRecevie=false;
 	}
 	@Override
@@ -50,7 +50,7 @@ public class StreamFrame extends TCPFrame {
 				unit.getO().write(result);
 				result=io.read();
 			}
-			this.loadedSocket.closeSendingDataPipe(dataPipeList);
+			this.loadedSocket.closeSendingDataPipe(dataPipeList,false);
 			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -81,8 +81,9 @@ public class StreamFrame extends TCPFrame {
 						io.write(buff,result);
 					result=unit.getK().read(buff);
 				}
+				
 			}
-			System.out.println(new String(io.read(978)));
+			System.out.println(new String(io.read((int)io.fileSize())));
 			this.loadedSocket.closeReceiveDataPipe(dataPipeList,false);
 			return true;
 		} catch (IOException e) {
