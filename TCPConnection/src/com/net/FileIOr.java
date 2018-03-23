@@ -90,6 +90,17 @@ public class FileIOr implements FileIO {
 			return false;
 		}
 	}
+	@Override
+	public boolean write(byte[] data, int size) {
+		// TODO Auto-generated method stub
+		try {
+			fos.write(data,0,size);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			return false;
+		}
+		return true;
+	}
 
 
 }

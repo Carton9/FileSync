@@ -233,16 +233,31 @@ public class ControlSocket {
 		}
 	}
 	public void closeSendingDataPipe(String key){
+		closeSendingDataPipe(key,true);
+	}
+	public void closeSendingDataPipe(String key,boolean confirm){
 		Socket dataPipe=dataSocketMap.remove(key);
 		LockMap.remove(dataPipe);
 		try {
-			dataPipe.getOutputStream().write(DISCONNECT.getBytes());
+			if(confirm) {
+				dataPipe.getOutputStream().write(DISCONNECT.getBytes());
+			}
 			dataPipe.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.out.print(e);
 		}
 		
+	}
+	public void closeSendingDataPipe(String key[],boolean confirm){
+		for(String i:key) {
+			closeSendingDataPipe(i,confirm);
+		}
+	}
+	public void closeReceiveDataPipe(String key[],boolean confirm) {
+		for(String i:key) {
+			closeReceiveDataPipe(i,confirm);
+		}
 	}
 	public void closeSendingDataPipe(String key[]){
 		for(String i:key) {
@@ -255,25 +270,34 @@ public class ControlSocket {
 		}
 	}
 	public void closeReceiveDataPipe(String key) {
+		closeReceiveDataPipe(key,true);
+	}
+	public void closeReceiveDataPipe(String key,boolean confirm) {
 		Socket dataPipe=dataSocketMap.get(key);
-		byte[] recevie=new byte[commendLength];
-		try {
-			dataPipe.getInputStream().read(recevie);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			System.out.println(e);
-		}
-		String command=new String(recevie);
-		if(command.equals(DISCONNECT)) {
-			dataSocketMap.remove(key);
-			LockMap.remove(dataPipe);
+		if(confirm) {
+			byte[] recevie=new byte[commendLength];
 			try {
-				dataPipe.close();
+				dataPipe.getInputStream().read(recevie);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				System.out.println(e);
 			}
+			String command=new String(recevie);
+			if(command.equals(DISCONNECT)) {
+				dataSocketMap.remove(key);
+				LockMap.remove(dataPipe);
+				try {
+					dataPipe.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					System.out.println(e);
+				}
+			}
+		}else {
+			dataSocketMap.remove(key);
+			LockMap.remove(dataPipe);
 		}
+		
 	}
 	private void writeCommend(String commend) throws IOException {
 		if(commend.length()>commendLength)

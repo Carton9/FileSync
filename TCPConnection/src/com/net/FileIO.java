@@ -7,6 +7,7 @@ public interface FileIO {
 	public void loadTemp();
 	public byte[] read(int size);
 	public boolean write(byte data[]);
+	public boolean write(byte data[],int size);
 	public int read();
 	public boolean write(byte data);
 	public long fileSize();

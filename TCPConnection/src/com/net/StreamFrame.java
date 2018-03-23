@@ -74,17 +74,21 @@ public class StreamFrame extends TCPFrame {
 				dataLength+=dis.readLong();
 			}
 			if(dataLength>0) {
-				for(long i=0;i<dataLength;i++) {
-					int result=unit.getK().read();
+				byte[] buff=new byte[3];
+				int result=unit.getK().read(buff);
+				while(result!=-1) {
 					if(result>-1)
-						io.write((byte)result);
+						io.write(buff,result);
+					result=unit.getK().read(buff);
 				}
 			}
-			this.loadedSocket.closeReceiveDataPipe(dataPipeList);
+			System.out.println(new String(io.read(978)));
+			this.loadedSocket.closeReceiveDataPipe(dataPipeList,false);
 			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			
 		}
 		return false;
 	}
