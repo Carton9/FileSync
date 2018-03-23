@@ -118,9 +118,8 @@ public class ControlSocket {
 		commend=recevieCommend();
 		if(commend.equals(DATAPIPESYNC)) {
 			ArrayList<String> keyset=getDataSync();
-			
 			frame.init(keyset.toArray(new String[keyset.size()]), this);
-			
+			System.out.println(frame.successInit);
 		}
 		
 		if(frame!=null) {
@@ -182,7 +181,6 @@ public class ControlSocket {
 		ArrayList<String> linkDataPipe=new ArrayList<String>();
 		
 		if(MaxDataPipePerFrame<totalCount) {
-			
 			return null;
 		}else {
 			
@@ -191,13 +189,17 @@ public class ControlSocket {
 				byte buff[]=new byte[dataLength];
 				controlPipe.getInputStream().read(buff);
 				String key=(new String(buff)).trim();
-				for(String c:dataSocketMap.keySet()) {
-					if(c.equals(key)) {
-						linkDataPipe.add(key);
-						
+				synchronized(dataSocketMap) {
+					HashMap<String,Socket> copyMap=(HashMap<String, Socket>) dataSocketMap.clone();
+					for(String c:copyMap.keySet()) {
+						if(c.equals(key)) {
+							linkDataPipe.add(key);
+							
+						}
+						//System.out.println(key+" "+c);
 					}
-					System.out.println(key+" "+c);
 				}
+				
 				
 			}
 			return linkDataPipe;
@@ -211,25 +213,27 @@ public class ControlSocket {
 		return true;
 	}
 	public boolean loadRunnableFrame(TCPFrame frame) throws IOException {
-		
 		boolean success=frame.successInit;
 		if(success) {
 			
 			pool.execute(new Runnable() {
 				@Override
 				public void run() {
-					frame.execute();
 					
+					frame.execute();
 				}
 			});
+			
 			return true;
 		}
+		System.out.println("send "+this.controlListenerPipe+frame.frameType+" "+frame.successInit);
 		return false;
 	}
 	public boolean loadRunnableFrames(List<TCPFrame> frames) throws IOException {
 		for(TCPFrame i:frames) {
-			if(!loadRunnableFrame(i))
+			if(!loadRunnableFrame(i)){
 				return false;
+			}
 		}
 		return true;
 	}

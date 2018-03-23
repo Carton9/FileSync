@@ -24,25 +24,28 @@ public class PTFrame extends TCPFrame {
 	PTFrame(FileIO file){
 		readIO=file;
 		this.frameType=ControlSocket.PTSTREAMFRAME;
-		this.RequirePipeSize=readIO.BlockCount()+1;
+		this.RequirePipeSize=(int) (readIO.fileSize()/10240)+2;
 		this.isRecevie=false;
 		resultList=new ArrayList<PTSubFrame>();
 		subList=new ArrayList<TCPFrame>();
 	}
+	
 	@Override
 	protected boolean init() {
 		if(isRecevie){
 			this.RequirePipeSize=this.dataPipeList.length;
 			for(int i=1;i<RequirePipeSize;i++) {
 				PTSubFrame subFrame=new PTSubFrame();
-				subFrame.init(new String[] {dataPipeList[i]}, loadedSocket);
+				boolean result=subFrame.init(new String[] {dataPipeList[i]}, loadedSocket);
+				System.out.println("isRecevie "+result);
 				subList.add(subFrame);
 				resultList.add(subFrame);
 			}
 		}else {
 			for(int i=1;i<RequirePipeSize;i++) {
 				PTSubFrame subFrame=new PTSubFrame(readIO.getBlock(),i);
-				subFrame.init(new String[] {dataPipeList[i]}, loadedSocket);
+				boolean result=subFrame.init(new String[] {dataPipeList[i]}, loadedSocket);
+				System.out.println("isRecevie "+result);
 				subList.add(subFrame);
 				resultList.add(subFrame);
 			}
@@ -58,7 +61,8 @@ public class PTFrame extends TCPFrame {
 			HashMap<String,BiUnit<InputStream,OutputStream>> map=this.loadedSocket.loadPipes(dataPipeList);
 			BiUnit<InputStream,OutputStream> unit=map.get(dataPipeList[0]);
 			unit.getO().write(TransmissionBegin.getBytes());
-			loadedSocket.loadRunnableFrames(subList);
+			boolean result=loadedSocket.loadRunnableFrames(subList);
+			
 			for(PTSubFrame i:resultList) {
 				i.finishTrans();
 			}
@@ -88,7 +92,11 @@ public class PTFrame extends TCPFrame {
 			if(commend.equals(TransmissionEnd)) {	
 			}
 			this.loadedSocket.closeReceiveDataPipe(new String[] {dataPipeList[0]});
-			
+			System.out.println();
+			for(PTSubFrame i:resultList) {
+				//System.out.print(new String(i.io.read((int)i.io.fileSize())));
+			}
+			System.out.println();
 			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

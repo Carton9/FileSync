@@ -20,7 +20,7 @@ public class UniversalFileIO implements FileIO {
 	FileOutputStream fos;
 	MappedBiggerFileReader reader;
 	boolean mappedMode;
-	static int defultSize=100;
+	public static int defultSize=10240;
 	public UniversalFileIO() {
 		loadTemp();
 		mappedMode=false;
@@ -80,7 +80,7 @@ public class UniversalFileIO implements FileIO {
 			loadedFile.delete();
 		try {
 			loadedFile=File.createTempFile("Temp", ".tp");
-			System.out.print(loadedFile.getAbsolutePath());
+			//System.out.print(loadedFile.getAbsolutePath());
 			fis=new FileInputStream(loadedFile);
 			fos=new FileOutputStream(loadedFile);
 			blockSize=-1;

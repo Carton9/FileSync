@@ -72,9 +72,9 @@ public class TestMain {
 		b.add(1);
 		//ObejctFrame<ArrayList> of=new ObejctFrame<ArrayList>(b);
 		
-		for(int i=0;i<10000;i++) {
-			UniversalFileIO io=new UniversalFileIO(null,-1,false);
-			io.load(new File("Test.txt"));
+		for(int i=0;i<1;i++) {
+			UniversalFileIO io=new UniversalFileIO(new File("Test.txt"));
+			//io.load();
 			TCPFrame of=TCPFrame.createFrame(io);
 			System.out.println(of.getClass());
 			Csocket.submitFrame(of);

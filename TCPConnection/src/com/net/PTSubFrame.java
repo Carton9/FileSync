@@ -14,10 +14,13 @@ public class PTSubFrame extends TCPFrame {
 	int order;
 	PTSubFrame(){
 		order=-1;
+		RequirePipeSize=1;
 	}
 	PTSubFrame(Block data,int order){
 		this.data=data;
 		this.order=order;
+		isRecevie=false;
+		RequirePipeSize=1;
 	}
 	@Override
 	protected boolean init() {
@@ -25,7 +28,8 @@ public class PTSubFrame extends TCPFrame {
 		if(isRecevie)
 			io=super.getTempFile();
 		lock.lock();
-		return false;
+		this.successInit=true;
+		return true;
 	}
 
 	@Override
@@ -39,6 +43,7 @@ public class PTSubFrame extends TCPFrame {
 			unit.getO().write(data.read());
 			this.loadedSocket.closeSendingDataPipe(dataPipeList,false);
 			lock.unlock();
+			
 			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -60,6 +65,7 @@ public class PTSubFrame extends TCPFrame {
 			io.write(data);
 			this.loadedSocket.closeReceiveDataPipe(dataPipeList,false);
 			lock.unlock();
+			//System.out.println(new String(io.read((int)io.fileSize())));
 			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
