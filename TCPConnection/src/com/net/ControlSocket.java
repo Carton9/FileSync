@@ -170,7 +170,6 @@ public class ControlSocket {
 			this.writeInt(this.controlPipe.getOutputStream(), dataSocket[i].length());
 			controlPipe.getOutputStream().write(dataSocket[i].getBytes());
 			controlPipe.getOutputStream().flush();
-			System.out.println(i);
 		}
 		
 		frame.init(dataSocket, this);
@@ -226,7 +225,6 @@ public class ControlSocket {
 			
 			return true;
 		}
-		System.out.println("send "+this.controlListenerPipe+frame.frameType+" "+frame.successInit);
 		return false;
 	}
 	public boolean loadRunnableFrames(List<TCPFrame> frames) throws IOException {
@@ -362,7 +360,7 @@ public class ControlSocket {
 		
 		byte data[]=new byte[length];
 		in.read(data);
-		System.out.println("readInt "+length+" "+new String(data));
+		//System.out.println("readInt "+length+" "+new String(data));
 		return Integer.parseInt(new String(data));
     }
 	public final void writeInt(OutputStream out,int v) throws IOException {

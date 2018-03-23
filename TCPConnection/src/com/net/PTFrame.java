@@ -94,7 +94,7 @@ public class PTFrame extends TCPFrame {
 			this.loadedSocket.closeReceiveDataPipe(new String[] {dataPipeList[0]});
 			System.out.println();
 			for(PTSubFrame i:resultList) {
-				//System.out.print(new String(i.io.read((int)i.io.fileSize())));
+				System.out.print((int)i.io.fileSize());
 			}
 			System.out.println();
 			return true;

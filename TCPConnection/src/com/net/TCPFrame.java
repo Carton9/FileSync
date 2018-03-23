@@ -19,7 +19,6 @@ public abstract class TCPFrame{
 		return frameType;
 	}
 	public void execute() {
-		System.out.println(this.getFrameType()+isRecevie+" run ");
 		if(isRecevie) 
 			successProcess=this.recevie();	
 		else
@@ -35,7 +34,6 @@ public abstract class TCPFrame{
 		
 		this.dataPipeList=dataPipeList;
 		this.loadedSocket=loadedSocket;
-		System.out.println("frame init "+this.frameType);
 		successInit=this.init();
 		return successInit;
 	}
@@ -50,7 +48,6 @@ public abstract class TCPFrame{
 			return new ObejctFrame();
 		}
 		if(commend.equals(ControlSocket.PTSTREAMFRAME)) {
-			System.out.print("PTSTREAMFRAME create");
 			return new PTFrame();
 		}
 		if(commend.equals(ControlSocket.STREAMFRAME)) {
