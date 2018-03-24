@@ -77,7 +77,7 @@ public class PTSubFrame extends TCPFrame {
 	@Override
 	protected Object result() {
 		// TODO Auto-generated method stub
-		return null;
+		return io;
 	}
 	protected void finishTrans() {
 		while(lock.state()==true) {
