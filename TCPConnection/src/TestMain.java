@@ -9,18 +9,19 @@ import java.util.Random;
 
 import com.net.ControlSocket;
 import com.net.ObejctFrame;
+import com.net.SecurityControlSocket;
 import com.net.TCPFrame;
 import com.net.UniversalFileIO;
 
 public class TestMain {
-	static ControlSocket Ssocket=null;
-	static ControlSocket Csocket=null;
+	static SecurityControlSocket Ssocket=null;
+	static SecurityControlSocket Csocket=null;
 	public static void main(String[] args) throws InterruptedException, IOException {
 		// TODO Auto-generated method stub
 		Thread a=new Thread() {
 			public void run() {
 				try {
-					Csocket=new ControlSocket("127.0.0.1",3000);
+					Csocket=new SecurityControlSocket("127.0.0.1",3000);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					System.out.print("Connector error "+e);
@@ -31,7 +32,7 @@ public class TestMain {
 		Thread c=new Thread() {
 			public void run() {
 				try {
-					Ssocket=new ControlSocket(3000);
+					Ssocket=new SecurityControlSocket(3000);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					System.out.print("Listener error "+e);

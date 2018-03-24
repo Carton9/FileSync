@@ -24,6 +24,13 @@ public class SecurityControlSocket extends ControlSocket{
 	}
 	public HashMap<String,BiUnit<InputStream,OutputStream>> loadSecurePipes(String[] keys,KeyUnit keyUnit) throws IOException{
 		HashMap<String,BiUnit<InputStream,OutputStream>> rawdata=super.loadPipes(keys);
-		return rawdata;
+		HashMap<String,BiUnit<InputStream,OutputStream>> data=new HashMap<String,BiUnit<InputStream,OutputStream>>();
+		for(String i:rawdata.keySet()) {
+			BiUnit<InputStream,OutputStream> unit=rawdata.get(i);
+			unit.setK(new SecureNetInputStream(unit.getK(),new DECKey()));
+			unit.setO(new SecureNetOutputStream(unit.getO(),new DECKey()));
+			data.put(i, unit);
+		}
+		return data;
 	}
 }
