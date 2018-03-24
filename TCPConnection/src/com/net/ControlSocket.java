@@ -175,7 +175,7 @@ public class ControlSocket {
 		frame.init(dataSocket, this);
 		return loadRunnableFrame(frame);
 	}
-	private ArrayList<String> getDataSync() throws IOException{
+	protected ArrayList<String> getDataSync() throws IOException{
 		int totalCount=readInt(this.controlPipe.getInputStream());
 		ArrayList<String> linkDataPipe=new ArrayList<String>();
 		
@@ -311,21 +311,21 @@ public class ControlSocket {
 		}
 		
 	}
-	private void writeCommend(String commend) throws IOException {
+	protected void writeCommend(String commend) throws IOException {
 		if(commend.length()>commendLength)
 			return;
 		controlPipe.getOutputStream().write(commend.getBytes());
 	}
-	private String recevieCommend() throws IOException {
+	protected String recevieCommend() throws IOException {
 		byte[] recevie=new byte[commendLength];
 		controlPipe.getInputStream().read(recevie);
 		return new String(recevie);
 	}
-	private String SHA512(String strText)  
+	protected String SHA512(String strText)  
 	  {  
 	    return SHA(strText, "SHA-512");  
 	  }  
-	private String SHA(final String strText, final String strType)  
+	protected String SHA(final String strText, final String strType)  
 	  {  
 	    String strResult = null;  
 	    if (strText != null && strText.length() > 0)  
