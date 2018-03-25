@@ -8,7 +8,14 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
 public class DECKey implements KeyUnit {
-	String testKey="3356360843822592";
+	private static String testKey="3356360843822592";
+	private String key;
+	public DECKey(String key) {
+		this.key=key;
+	}
+	public static DECKey getdefultKey() {
+		return new DECKey(testKey);
+	}
 	@Override
 	public int decryptSize(int originSize) {
 		// TODO Auto-generated method stub
@@ -24,13 +31,13 @@ public class DECKey implements KeyUnit {
 	@Override
 	public byte[] decrypt(byte[] in) {
 		// TODO Auto-generated method stub
-		return decrypt(in,testKey);
+		return decrypt(in,key);
 	}
 
 	@Override
 	public byte[] encrypt(byte[] in) {
 		// TODO Auto-generated method stub
-		return encrypt(in,testKey);
+		return encrypt(in,key);
 	}
 	 public static byte[] encrypt(byte[] content, String key) {  
 	        try {  
