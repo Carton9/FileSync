@@ -92,10 +92,13 @@ public class PTFrame extends TCPFrame {
 			if(commend.equals(TransmissionEnd)) {	
 			}
 			this.loadedSocket.closeReceiveDataPipe(new String[] {dataPipeList[0]});
+<<<<<<< HEAD
 			for(PTSubFrame i:resultList) {
 				System.out.print(new String(i.io.read((int) i.io.fileSize())));
 			}
 			System.out.println();
+=======
+>>>>>>> 0b2e3c1bf8bff879c275b22e09bb12df4e138d19
 			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
