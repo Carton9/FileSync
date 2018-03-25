@@ -4,13 +4,14 @@ import java.io.File;
 import java.io.IOException;
 
 public abstract class TCPFrame{
-	boolean isRecevie;
-	int RequirePipeSize;
-	ControlSocket loadedSocket;
-	String dataPipeList[];
-	boolean successInit;
-	boolean successProcess=false;
-	String frameType;
+	protected boolean isRecevie;
+	protected int RequirePipeSize;
+	protected ControlSocket loadedSocket;
+	protected String dataPipeList[];
+	protected boolean finish=false;
+	protected boolean successInit;
+	protected boolean successProcess=false;
+	protected String frameType;
 	TCPFrame(){
 		isRecevie=true;
 		
@@ -23,8 +24,10 @@ public abstract class TCPFrame{
 			successProcess=this.recevie();	
 		else
 			successProcess=this.send();
-		
+		finish=true;
+		this.notifyAll();
 	}
+	public boolean isFinish() {return finish;}
 	public int getRequirePipeSize() {
 		return RequirePipeSize;
 	}
@@ -74,16 +77,40 @@ public abstract class TCPFrame{
 	public static<T> T unpackPacket(TCPFrame frame) {
 		if(frame.getFrameType()!=ControlSocket.PACKETFRAME)
 			return null;
+		while(!frame.isFinish()) {
+			try {
+				frame.wait();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		return (T)frame.result();
 	}
 	public static FileIO unpackStream(TCPFrame frame) {
 		if(frame.getFrameType()!=ControlSocket.STREAMFRAME)
 			return null;
+		while(!frame.isFinish()) {
+			try {
+				frame.wait();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		return (FileIO)frame.result();
 	}
 	public static FileIO unpackPTStream(TCPFrame frame) {
 		if(frame.getFrameType()!=ControlSocket.PTSTREAMFRAME)
 			return null;
+		while(!frame.isFinish()) {
+			try {
+				frame.wait();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		return (FileIO)frame.result();
 	}
 	protected static FileIO getTempFile() {
