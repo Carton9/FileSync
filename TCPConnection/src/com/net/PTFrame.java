@@ -92,11 +92,6 @@ public class PTFrame extends TCPFrame {
 			if(commend.equals(TransmissionEnd)) {	
 			}
 			this.loadedSocket.closeReceiveDataPipe(new String[] {dataPipeList[0]});
-			System.out.println();
-			for(PTSubFrame i:resultList) {
-				System.out.print((int)i.io.fileSize());
-			}
-			System.out.println();
 			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -108,8 +103,15 @@ public class PTFrame extends TCPFrame {
 
 	@Override
 	protected Object result() {
-		// TODO Auto-generated method stub
-		return false;
+		// TODO Auto-generated method stub\
+		UniversalFileIO io=new UniversalFileIO();
+		FileIO[] list=new FileIO[resultList.size()];
+		for(PTSubFrame i:resultList) {
+			list[i.order-1]=(FileIO)i.result();
+		}
+		if(io.loadIO(list))
+			return 	io;
+		return null;
 	}
 	private String recevieCommend(InputStream stream) throws IOException {
 		byte[] recevie=new byte[4];
