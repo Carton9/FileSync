@@ -48,6 +48,7 @@ public class ControlSocket {
 	DataInputStream cis;
 	DataOutputStream cos;
 	ExecutorService pool;
+	ResultQueue queue=new ResultQueue();
 	public ControlSocket(InetAddress ip,int port) throws IOException {
 		controlPipe=new Socket(ip,port);
 		controlPipe.getOutputStream().write(CONTROLCONNECT.getBytes());
@@ -121,8 +122,9 @@ public class ControlSocket {
 			frame.init(keyset.toArray(new String[keyset.size()]), this);
 			System.out.println(frame.successInit);
 		}
-		
+	
 		if(frame!=null) {
+			queue.addFrame(frame);
 			loadRunnableFrame(frame);
 		}
 	}
@@ -203,6 +205,9 @@ public class ControlSocket {
 			}
 			return linkDataPipe;
 		}
+	}
+	public ResultQueue getResultQueue() {
+		return queue;
 	}
 	public boolean submitFrame(List<TCPFrame> frames) throws IOException {
 		for(TCPFrame i:frames) {
