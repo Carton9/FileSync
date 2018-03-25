@@ -39,9 +39,9 @@ public class TestMain {
 				}
 			}
 		};
-		a.start();
+	//	a.start();
 		c.start();
-		a.join();
+	//	a.join();
 		c.join();
 		Thread p=new Thread() {
 			public void run() {
@@ -75,12 +75,12 @@ public class TestMain {
 		ObejctFrame<ArrayList> of=new ObejctFrame<ArrayList>(b);
 		
 		for(int i=0;i<100;i++) {
-			UniversalFileIO io=new UniversalFileIO(new File("Test.txt"));
+			//UniversalFileIO io=new UniversalFileIO(new File("Test.txt"));
 			//io.load();
 			//TCPFrame of=TCPFrame.createFrame(io);
-			System.out.println(of.getClass());
-			Csocket.submitFrame(of);
-			Thread.sleep((new Random()).nextInt(1000)+10);
+			//System.out.println(of.getClass());
+			//Csocket.submitFrame(of);
+			//Thread.sleep((new Random()).nextInt(1000)+10);
 			//System.out.println("send");
 		}
 		
