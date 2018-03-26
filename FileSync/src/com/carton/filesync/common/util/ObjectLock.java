@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ObjectLock {
 	private AtomicBoolean lock;
 	public ObjectLock() {
+		lock=new AtomicBoolean();
 		lock.set(false);
 	}
 	public synchronized void lock() {
@@ -20,6 +21,9 @@ public class ObjectLock {
 			}
 		}
 		return false;
+	}
+	public synchronized boolean state() {
+		return lock.get();
 	}
 	public synchronized void unlock() {
 		lock.set(false);

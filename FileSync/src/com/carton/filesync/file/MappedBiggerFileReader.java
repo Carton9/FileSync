@@ -9,13 +9,14 @@ import java.nio.channels.FileChannel;
 import com.carton.filesync.common.util.Block;
 import com.carton.filesync.common.util.ExtensionArrayList;
 
+
 /**
  * Created by zfh on 16-4-19.
  */
 public class MappedBiggerFileReader {
     private MappedByteBuffer[] mappedBufArray;
     private int count = 0;
-    private int number;
+    private final int number;
     private FileInputStream fileIn;
     private long fileLength;
     private int arraySize;
@@ -105,7 +106,9 @@ public class MappedBiggerFileReader {
     public long getFileLength() {
         return fileLength;
     }
-
+    public int blockCount() {
+    	return this.number;
+    }
     /*public static void main(String[] args) throws IOException {
         MappedBiggerFileReader reader = new MappedBiggerFileReader("/home/zfh/movie.mkv", 65536);
         long start = System.nanoTime();
