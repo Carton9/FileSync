@@ -27,7 +27,7 @@ import java.util.concurrent.locks.Lock;
 import com.carton.filesync.common.util.BiUnit;
 import com.carton.filesync.common.util.ObjectLock;
 
-public class ControlSocket {
+public class ControlSocket implements AutoCloseable{
 	private final static String CONTROLCONNECT="CSCO";
 	private final static String DATACONNECT="DSCO";
 	private final static String ACCEPT="ACPT";
@@ -94,6 +94,8 @@ public class ControlSocket {
 		this(InetAddress.getByName(ip),port);
 	}
 	public void listenPort() throws IOException {
+		if(queue.isShoutdown())
+			return;
 		Socket socket=controlListenerPipe.accept();
 		byte[] recevie=new byte[commendLength];
 		socket.getInputStream().read(recevie);
@@ -115,6 +117,8 @@ public class ControlSocket {
 		}
 	}
 	public void listenControlPipe() throws IOException {
+		if(queue.isShoutdown())
+			return;
 		String commend=recevieCommend();
 		TCPFrame frame=null;
 		frame=TCPFrame.createFrame(commend);
@@ -274,7 +278,7 @@ public class ControlSocket {
 			closeSendingDataPipe(i,confirm);
 		}
 	}
-	public void closeReceiveDataPipe(String key[],boolean confirm) {
+	void closeReceiveDataPipe(String key[],boolean confirm) {
 		for(String i:key) {
 			closeReceiveDataPipe(i,confirm);
 		}
@@ -376,4 +380,22 @@ public class ControlSocket {
 		out.write((byte)data.length());
 		out.write(data.getBytes());
     }
+	public void close() {
+		pool.shutdown();
+		while(!pool.isTerminated());
+		pool=null;
+		this.queue.shoutdown();
+		try {
+			controlPipe.close();
+			if(controlListenerPipe!=null)
+				controlListenerPipe.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		for(String i:dataSocketMap.keySet()) {
+			closeReceiveDataPipe(i,false);
+		}
+		
+	}
 }

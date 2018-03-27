@@ -8,6 +8,7 @@ import com.carton.filesync.file.FileIO;
 public class ResultQueue {
 	public enum FrameType{Object,File};
 	Vector<TCPFrame> queue=new Vector<TCPFrame>();
+	boolean shoutdown=false;
 	synchronized boolean addFrame(TCPFrame frame) {
 		queue.add(frame);
 		synchronized(this) {
@@ -16,7 +17,15 @@ public class ResultQueue {
 		
 		return true;
 	}
+	public void shoutdown() {
+		this.shoutdown=true;
+	}
+	public boolean isShoutdown() {
+		return shoutdown;
+	}
 	synchronized boolean addFrame(TCPFrame frame,int i) {
+		if(shoutdown)
+			return false;
 		queue.add(i,frame);
 		synchronized(this) {
 			this.notifyAll();
@@ -24,6 +33,8 @@ public class ResultQueue {
 		return true;
 	}
 	public synchronized TCPFrame getFrame(int i) {
+		if(shoutdown)
+			return false;
 		return queue.get(i);
 	}
 	public synchronized<T> T getFrameByClass(int i,Class<T> output) {
