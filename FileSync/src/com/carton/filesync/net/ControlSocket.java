@@ -41,6 +41,7 @@ public class ControlSocket implements AutoCloseable{
 	public final static String PTSTREAMFRAME="PTFM";
 	
 	private final static String DATAPIPESYNC="DPSC";
+	private final static String FRAMEREQUEST="FMRQ";
 	private final static int commendLength=4;
 	private final static int MaxDataPipePerFrame=1000;
 	private Socket controlPipe;
@@ -168,13 +169,32 @@ public class ControlSocket implements AutoCloseable{
 		return result;
 	}
 	public boolean submitFrame(TCPFrame frame) throws IOException {
+		if(this.controlListenerPipe==null)
+			return setUpFrameForClient(frame);
+		else
+			return setUpFrameForServer(frame);
+	}
+	private boolean setUpFrameForServer(TCPFrame frame)throws IOException{
+		writeCommend(this.FRAMEREQUEST);
+		writeCommend(frame.getFrameType());
+		cos.writeInt(frame.getRequirePipeSize());
+		if(!recevieCommend().equals(ACCEPT))
+			return false;
+		String commend=recevieCommend();
+		if(commend.equals(DATAPIPESYNC)) {
+			ArrayList<String> keyset=getDataSync();
+			frame.init(keyset.toArray(new String[keyset.size()]), this);
+			System.out.println(frame.successInit);
+		}
+		return loadRunnableFrame(frame);
+	}
+	private boolean setUpFrameForClient(TCPFrame frame) throws IOException {
 		String dataSocket[]=getMutilDataSocket(frame.getRequirePipeSize());
 		writeCommend(frame.getFrameType());
 		if(!recevieCommend().equals(ACCEPT))
 			return false;
 		writeCommend(DATAPIPESYNC);
 		this.writeInt(this.controlPipe.getOutputStream(), dataSocket.length);
-		
 		for(int i=0;i<dataSocket.length;i++) {
 			this.writeInt(this.controlPipe.getOutputStream(), dataSocket[i].length());
 			controlPipe.getOutputStream().write(dataSocket[i].getBytes());
