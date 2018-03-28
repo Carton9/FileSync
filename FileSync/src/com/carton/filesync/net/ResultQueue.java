@@ -34,7 +34,7 @@ public class ResultQueue {
 	}
 	public synchronized TCPFrame getFrame(int i) {
 		if(shoutdown)
-			return false;
+			return null;
 		return queue.get(i);
 	}
 	public synchronized<T> T getFrameByClass(int i,Class<T> output) {

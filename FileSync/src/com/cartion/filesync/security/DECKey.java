@@ -68,5 +68,10 @@ public class DECKey implements KeyUnit {
 	            e.printStackTrace();  
 	        }  
 	        return null;  
-	    }  
+	    }
+	@Override
+	public String getCypherType() {
+		// TODO Auto-generated method stub
+		return "DEC";
+	}  
 }

@@ -223,7 +223,7 @@ public class ControlSocket implements AutoCloseable{
 		}
 		return true;
 	}
-	public boolean loadRunnableFrame(TCPFrame frame) throws IOException {
+	boolean loadRunnableFrame(TCPFrame frame) throws IOException {
 		boolean success=frame.successInit;
 		if(success) {
 			
@@ -239,7 +239,7 @@ public class ControlSocket implements AutoCloseable{
 		}
 		return false;
 	}
-	public boolean loadRunnableFrames(List<TCPFrame> frames) throws IOException {
+	boolean loadRunnableFrames(List<TCPFrame> frames) throws IOException {
 		for(TCPFrame i:frames) {
 			if(!loadRunnableFrame(i)){
 				return false;
@@ -247,7 +247,7 @@ public class ControlSocket implements AutoCloseable{
 		}
 		return true;
 	}
-	public String[] getMutilDataSocket(int size) throws IOException {
+	String[] getMutilDataSocket(int size) throws IOException {
 		ArrayList<String> dataSocketList=new ArrayList<String>();
 		for(int i=0;i<size;i++) {
 			String result=requireDataSocket();
@@ -256,10 +256,10 @@ public class ControlSocket implements AutoCloseable{
 		}
 		return dataSocketList.toArray(new String[dataSocketList.size()]);
 	}
-	public void closeSendingDataPipe(String key){
+	void closeSendingDataPipe(String key){
 		closeSendingDataPipe(key,true);
 	}
-	public void closeSendingDataPipe(String key,boolean confirm){
+	void closeSendingDataPipe(String key,boolean confirm){
 		Socket dataPipe=dataSocketMap.remove(key);
 		LockMap.remove(dataPipe);
 		try {
@@ -273,7 +273,7 @@ public class ControlSocket implements AutoCloseable{
 		}
 		
 	}
-	public void closeSendingDataPipe(String key[],boolean confirm){
+	void closeSendingDataPipe(String key[],boolean confirm){
 		for(String i:key) {
 			closeSendingDataPipe(i,confirm);
 		}
