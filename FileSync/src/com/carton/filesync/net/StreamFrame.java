@@ -37,6 +37,7 @@ public class StreamFrame extends TCPFrame {
 	@Override
 	protected boolean send() {
 		try {
+			
 			HashMap<String,BiUnit<InputStream,OutputStream>> map=this.loadedSocket.loadPipes(dataPipeList);
 			BiUnit<InputStream,OutputStream> unit=map.get(dataPipeList[0]);
 			DataOutputStream dos=new DataOutputStream(unit.getO());
@@ -66,6 +67,7 @@ public class StreamFrame extends TCPFrame {
 	protected boolean recevie() {
 		// TODO Auto-generated method stub
 		try {
+			
 			HashMap<String,BiUnit<InputStream,OutputStream>> map=this.loadedSocket.loadPipes(dataPipeList);
 			BiUnit<InputStream,OutputStream> unit=map.get(dataPipeList[0]);
 			DataInputStream dis=new DataInputStream(unit.getK());
@@ -88,6 +90,7 @@ public class StreamFrame extends TCPFrame {
 			}
 			System.out.println(new String(io.read((int)io.fileSize())));
 			this.loadedSocket.closeReceiveDataPipe(dataPipeList,false);
+			
 			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
