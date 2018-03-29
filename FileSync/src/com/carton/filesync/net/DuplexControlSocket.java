@@ -6,7 +6,7 @@ import java.net.InetAddress;
 import com.cartion.filesync.security.DECKey;
 import com.cartion.filesync.security.KeyUnit;
 
-public class DuplexControlSocket {
+public class DuplexControlSocket implements AutoCloseable{
 	ControlSocket Ssocket;
 	ControlSocket Csocket;
 	Thread PortListener;
@@ -94,10 +94,25 @@ public class DuplexControlSocket {
 	public DuplexControlSocket(String ip,int port) throws IOException, InterruptedException {
 		this(ip,port,null);
 	}
-	public boolean submitFrame(TCPFrame frame) throws IOException {
-		return Csocket.submitFrame(frame);
+	public synchronized boolean submitFrame(TCPFrame frame) throws IOException {
+		synchronized(Csocket) {
+			return Csocket.submitFrame(frame);
+		}
 	}
-	public ResultQueue getResultQueue() {
-		return Ssocket.getResultQueue();
+	public synchronized ResultQueue getResultQueue() {
+		synchronized(Ssocket) {
+			return Ssocket.getResultQueue();
+		}
+	}
+	@Override
+	public synchronized void close() throws Exception {
+		synchronized(Ssocket) {
+			Ssocket.close();
+		}
+		synchronized(Csocket) {
+			Csocket.close();
+		}
+		PortListener.stop();
+		PipeListener.stop();
 	}
 }

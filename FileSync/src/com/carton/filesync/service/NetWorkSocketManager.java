@@ -1,54 +1,53 @@
 package com.carton.filesync.service;
 
-import java.util.HashMap;
+import java.io.File;
+import java.util.concurrent.ConcurrentHashMap;
 
+import com.carton.filesync.file.FileIO;
 import com.carton.filesync.net.ControlSocket;
+import com.carton.filesync.net.DuplexControlSocket;
 import com.carton.filesync.net.SecurityControlSocket;
+import com.carton.filesync.net.TCPFrame;
 
 public class NetWorkSocketManager {
-	HashMap<String,ControlSocket> controlSocketMap;
-	HashMap<String,SecurityControlSocket> secureControlSocketMap;
-	boolean secureMode;
-	public NetWorkSocketManager(boolean secureMode) {
-		this.secureMode=secureMode;
-		if(secureMode)
-			secureControlSocketMap=new HashMap<String,SecurityControlSocket>();
-		else
-			controlSocketMap=new HashMap<String,ControlSocket>();
+	ConcurrentHashMap<String,DuplexControlSocket> controlSocketMap;
+	public NetWorkSocketManager() {
 	}
-	public boolean addControlSocket(String id,SecurityControlSocket socket) {
-		if(secureMode){
-			secureControlSocketMap.put(id, socket);
-			return true;
-		}
-		return false;
-	}
-	public boolean addControlSocket(String id,ControlSocket socket) {
-		if(!secureMode){
-			controlSocketMap.put(id, socket);
-			return true;
-		}
-		return false;
-	}
-	public boolean removeControlSocket(String id) {
-		if(secureMode){
-			if(secureControlSocketMap!=null&&secureControlSocketMap.get(id)!=null)
-				secureControlSocketMap.remove(id).close();
-			else
-				return false;
-		}
-		else{
-			if(controlSocketMap!=null&&controlSocketMap.get(id)!=null)
-				controlSocketMap.remove(id).close();
-			else
-				return false;
-		}
+	public boolean addControlSocket(String id,DuplexControlSocket socket) {
+		controlSocketMap.put(id, socket);
 		return true;
 	}
-	public ControlSocket getSocket(String id) {
-		if(secureMode)
-			return secureControlSocketMap.get(id);
+	public String[] keys() {
+		return controlSocketMap.keySet().toArray(new String[controlSocketMap.size()]);
+	}
+	public DuplexControlSocket removeControlSocket(String id) {
+		return controlSocketMap.remove(id);
+	}
+	public DuplexControlSocket getSocket(String id) {
+		return controlSocketMap.get(id);
+	}
+	public<T> void submitFrameThough(String id,T object) {
+		TCPFrame frame=null;
+		if(object.getClass().equals(FileIO.class))
+			frame=TCPFrame.createFrame((FileIO)object);
+		else if(object.getClass().equals(File.class))
+			frame=TCPFrame.createFrame((File)object);
 		else
-			return controlSocketMap.get(id);
+			frame=TCPFrame.createFrame(object);
+	}
+	public void closeControlSocket(String id) throws Exception {
+		controlSocketMap.get(id).close();
+		controlSocketMap.remove(id);
+	}
+	public void closeAllControlSocket() {
+		String keys[]=keys();
+		for(String i:keys) {
+			try {
+				closeControlSocket(i);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 }

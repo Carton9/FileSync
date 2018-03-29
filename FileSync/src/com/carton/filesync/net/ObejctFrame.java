@@ -9,16 +9,17 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
 import com.carton.filesync.common.util.BiUnit;
 
-public class ObejctFrame<T> extends TCPFrame {
-	T object;
+public class ObejctFrame extends TCPFrame {
+	Serializable object;
 	byte[] data;
-	public ObejctFrame(T object) {
+	public ObejctFrame(Serializable object) {
 		this.frameType=ControlSocket.PACKETFRAME;
 		this.object=object;
 		this.RequirePipeSize=1;
