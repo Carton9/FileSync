@@ -85,6 +85,8 @@ public class DuplexControlSocket {
 				}
 			}
 		};
+		PortListener.start();
+		PipeListener.start();
 	}
 	public DuplexControlSocket(String ip,int port,KeyUnit key) throws IOException, InterruptedException {
 		this(InetAddress.getByName(ip),port,key);
