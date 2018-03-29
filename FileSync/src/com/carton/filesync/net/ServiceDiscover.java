@@ -11,6 +11,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Random;
 import java.util.Timer;
+import java.util.TimerTask;
 
 import com.cartion.filesync.security.SignProducer;
 
@@ -30,6 +31,7 @@ public class ServiceDiscover {
 	SignProducer signMaker;
 	boolean isServer;
 	byte[] data;
+	int port;
 	public ServiceDiscover(boolean isServer) throws SocketException, UnknownHostException {
 		ds = new DatagramSocket(receviePort);
 		broadcast = InetAddress.getByName("255.255.255.255");
@@ -41,7 +43,7 @@ public class ServiceDiscover {
 		finishInit=true;
 		this.signMaker=signMaker;
 		try {
-			data=createDatagram();
+			data=createDiscoverDatagram();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -49,12 +51,35 @@ public class ServiceDiscover {
 		}
 		return true;
 	}
-	private byte[] createDatagram() throws IOException {
+	public void init() {
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				synchronized(data) {
+					if(data==null)
+						return;
+					dp_send=new DatagramPacket(data,data.length,broadcast,sendPort);
+				}
+				for(int i=0;i<3;i++) {
+					try {
+						ds.send(dp_send);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}},500);
+	}
+	public void execute() {
+		
+	}
+	private byte[] createDiscoverDatagram(boolean) throws IOException {
 		ByteArrayOutputStream bOut=new ByteArrayOutputStream();
 		if(finishInit) {
 			bOut.write(InetAddress.getLocalHost().getAddress());
 			Random maker=new Random();
-			int port=-1;
+			port=-1;
 			while(port<0) {
 				port=maker.nextInt(9999)+30000;
 				if(isLocalPortUsing(port))
@@ -76,7 +101,7 @@ public class ServiceDiscover {
 		}else
 			return null;
 	}
-    public static boolean isLocalPortUsing(int port){  
+	private static boolean isLocalPortUsing(int port){  
         boolean flag = true;  
         try {
             flag = isPortUsing("127.0.0.1", port);  

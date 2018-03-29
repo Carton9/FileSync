@@ -2,6 +2,7 @@ package com.carton.filesync.net;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.List;
 
 import com.cartion.filesync.security.DECKey;
 import com.cartion.filesync.security.KeyUnit;
@@ -97,6 +98,11 @@ public class DuplexControlSocket implements AutoCloseable{
 	public synchronized boolean submitFrame(TCPFrame frame) throws IOException {
 		synchronized(Csocket) {
 			return Csocket.submitFrame(frame);
+		}
+	}
+	public synchronized boolean submitFrame(List<TCPFrame> frames) throws IOException {
+		synchronized(Csocket) {
+			return Csocket.submitFrame(frames);
 		}
 	}
 	public synchronized ResultQueue getResultQueue() {

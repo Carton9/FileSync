@@ -96,10 +96,10 @@ public class ObejctFrame extends TCPFrame {
         byteArrayOutputStream.close();  
         return output;
 	}
-	private T Deserialize(byte[] input) throws IOException, ClassNotFoundException{
+	private Serializable Deserialize(byte[] input) throws IOException, ClassNotFoundException{
 		ByteArrayInputStream byteArrayOutputStream = new ByteArrayInputStream(input);  
 		ObjectInputStream objectOutputStream = new ObjectInputStream(byteArrayOutputStream);
-		T output=(T)objectOutputStream.readObject();  
+		Serializable output=(Serializable)objectOutputStream.readObject();  
         objectOutputStream.close();        
         byteArrayOutputStream.close();  
         return output;
