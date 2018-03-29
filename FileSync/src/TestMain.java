@@ -11,8 +11,8 @@ import com.carton.filesync.file.UniversalFileIO;
 import com.carton.filesync.net.*;
 
 public class TestMain {
-	static SecurityControlSocket Ssocket=null;
-	static SecurityControlSocket Csocket=null;
+	static ControlSocket Ssocket=null;
+	static ControlSocket Csocket=null;
 	public static void main(String[] args) throws InterruptedException, IOException {
 		// TODO Auto-generated method stub
 		Thread a=new Thread() {
@@ -55,17 +55,24 @@ public class TestMain {
 		Thread c2=new Thread() {
 			public void run() {
 				while(true) {
+				}
+					
+			}
+		};
+		Thread p2=new Thread() {
+			public void run() {
+				while(true) {
 					try {
-						Ssocket.listenControlPipe();
+						Csocket.listenControlPipe();
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
-					
 			}
 		};
 		p.start();
+		p2.start();
 		c2.start();
 		ArrayList<Integer> b=new ArrayList<Integer>();
 		b.add(1);
@@ -77,7 +84,7 @@ public class TestMain {
 			//io.load();
 			TCPFrame of=TCPFrame.createFrame(io);
 			System.out.println(of.getClass());
-			Csocket.submitFrame(of);
+			Ssocket.submitFrame(of);
 			Thread.sleep((new Random()).nextInt(1000)+10);
 			System.out.println("send");
 		}

@@ -41,6 +41,7 @@ public class ControlSocket implements AutoCloseable{
 	public final static String PTSTREAMFRAME="PTFM";
 	
 	private final static String DATAPIPESYNC="DPSC";
+	private final static String FRAMEREQUEST="FMRQ";
 	private final static int commendLength=4;
 	private final static int MaxDataPipePerFrame=1000;
 	private Socket controlPipe;
@@ -119,6 +120,36 @@ public class ControlSocket implements AutoCloseable{
 	public void listenControlPipe() throws IOException {
 		if(queue.isShoutdown())
 			return;
+		if(this.controlListenerPipe==null)
+			clientListener();
+		else
+			serverListener();
+		
+	}
+	private void clientListener()throws IOException{
+		String commend=recevieCommend();
+		if(commend.equals(FRAMEREQUEST)) {
+			commend=recevieCommend();
+			TCPFrame frame=TCPFrame.createFrame(commend);
+			int data=this.readInt(this.controlPipe.getInputStream());
+			writeCommend(ACCEPT);
+			String dataPipes[]=getMutilDataSocket(data);
+			
+			writeCommend(DATAPIPESYNC);
+			this.writeInt(this.controlPipe.getOutputStream(), dataPipes.length);
+			for(int i=0;i<dataPipes.length;i++) {
+				this.writeInt(this.controlPipe.getOutputStream(), dataPipes[i].length());
+				controlPipe.getOutputStream().write(dataPipes[i].getBytes());
+				controlPipe.getOutputStream().flush();
+			}
+			
+			frame.init(dataPipes, this);
+			loadRunnableFrame(frame);
+			//writeCommend(frame.getFrameType());
+			//cos.writeInt(frame.getRequirePipeSize());
+		}
+	}
+	private void serverListener()throws IOException{
 		String commend=recevieCommend();
 		TCPFrame frame=null;
 		frame=TCPFrame.createFrame(commend);
@@ -168,13 +199,38 @@ public class ControlSocket implements AutoCloseable{
 		return result;
 	}
 	public boolean submitFrame(TCPFrame frame) throws IOException {
+		if(this.controlListenerPipe==null)
+			return setUpFrameForClient(frame);
+		else
+			return setUpFrameForServer(frame);
+	}
+	private boolean setUpFrameForServer(TCPFrame frame)throws IOException{
+		writeCommend(FRAMEREQUEST);
+		writeCommend(frame.getFrameType());
+		writeInt(this.controlPipe.getOutputStream(),frame.getRequirePipeSize());
+		String command=recevieCommend();
+		if(!command.equals(ACCEPT)){
+			System.out.println("get "+command);
+			System.out.println("get "+recevieCommend());
+			return false;
+		}
+		
+		String commend=recevieCommend();
+		System.out.println();
+		if(commend.equals(DATAPIPESYNC)) {
+			ArrayList<String> keyset=getDataSync();
+			frame.init(keyset.toArray(new String[keyset.size()]), this);
+			System.out.println(frame.successInit);
+		}
+		return loadRunnableFrame(frame);
+	}
+	private boolean setUpFrameForClient(TCPFrame frame) throws IOException {
 		String dataSocket[]=getMutilDataSocket(frame.getRequirePipeSize());
 		writeCommend(frame.getFrameType());
 		if(!recevieCommend().equals(ACCEPT))
 			return false;
 		writeCommend(DATAPIPESYNC);
 		this.writeInt(this.controlPipe.getOutputStream(), dataSocket.length);
-		
 		for(int i=0;i<dataSocket.length;i++) {
 			this.writeInt(this.controlPipe.getOutputStream(), dataSocket[i].length());
 			controlPipe.getOutputStream().write(dataSocket[i].getBytes());
