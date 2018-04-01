@@ -3,6 +3,7 @@ package com.carton.filesync.net;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -14,14 +15,17 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import com.cartion.filesync.security.SignProducer;
+import com.carton.filesync.service.NetworkSocketManager;
 
 public class ServiceDiscover {
-	private static final int TIMEOUT = 5000;
+	private static final int TIMEOUT = 1000;
 	private static final int MAXNUM = 3; 
 	private static final int sendPort=40000;
 	private static final int receviePort=40001;
 	private static final byte ClientMark=(byte)'c';
 	private static final byte ServerMark=(byte)'s';
+	private static final byte SecureMark=(byte)'S';
+	private static final byte UnSecureMark=(byte)'U';
 	InetAddress broadcast;
 	DatagramSocket ds;
 	DatagramPacket dp_send;
@@ -32,12 +36,24 @@ public class ServiceDiscover {
 	boolean isServer;
 	byte[] data;
 	int port;
-	public ServiceDiscover(boolean isServer) throws SocketException, UnknownHostException {
+	TimerTask sendInfo;
+	TimerTask renewInfo;
+	NetworkSocketManager manager;
+	public class CompilableDatagram{
+		InetAddress ipAddress;
+		int portInfo;
+		String idInfo;
+		char serverMarkInfo;
+		char secureMark;
+		String versionInfo;
+	}
+	public ServiceDiscover(boolean isServer,NetworkSocketManager manager) throws SocketException, UnknownHostException {
 		ds = new DatagramSocket(receviePort);
 		broadcast = InetAddress.getByName("255.255.255.255");
 		ds.setSoTimeout(TIMEOUT);
 		this.isServer=isServer;
 		timer=new Timer();
+		this.manager=manager;
 	}
 	public boolean loadInfo(SignProducer signMaker) {
 		finishInit=true;
@@ -51,8 +67,9 @@ public class ServiceDiscover {
 		}
 		return true;
 	}
-	public void init() {
-		timer.schedule(new TimerTask() {
+	public void init() throws SocketException {
+		ds.setSoTimeout(TIMEOUT);
+		sendInfo=new TimerTask() {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
@@ -61,7 +78,7 @@ public class ServiceDiscover {
 						return;
 					dp_send=new DatagramPacket(data,data.length,broadcast,sendPort);
 				}
-				for(int i=0;i<3;i++) {
+				synchronized(ds) {
 					try {
 						ds.send(dp_send);
 					} catch (IOException e) {
@@ -69,12 +86,78 @@ public class ServiceDiscover {
 						e.printStackTrace();
 					}
 				}
-			}},500);
+			}};
+		renewInfo=new TimerTask() {
+
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					synchronized(data) {
+						try {
+							data=createDiscoverDatagram();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+				
+			};
+		timer.schedule(sendInfo,1000);
+		timer.schedule(renewInfo,30*60*1000);
 	}
 	public void execute() {
-		
+		CompilableDatagram datagram=recevie();
+		if(datagram==null)
+			return;
+		if(this.isServer&&datagram.serverMarkInfo==this.ClientMark) {
+			serverProcess(datagram);
+		}
 	}
-	private byte[] createDiscoverDatagram(boolean) throws IOException {
+	private void serverProcess(CompilableDatagram datagram) {
+		
+		try {
+			data=createDiscoverDatagram();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	private CompilableDatagram recevie() throws IOException {
+		byte[] buff=new byte[140];
+		dp_receive = new DatagramPacket(buff, 140);
+		try {
+			ds.receive(dp_receive);
+		}catch(InterruptedIOException e){
+			return null;
+		}
+		buff=dp_receive.getData();
+		ByteArrayInputStream bis=new ByteArrayInputStream(buff);
+		byte ip[]=new byte[4];
+		byte port[]=new byte[2];
+		char serverMark=0;
+		byte id[]=new byte[128];
+		char secureMark=0;
+		byte version[]=new byte[4];
+		bis.read(ip);
+		bis.read(port);
+		serverMark=(char)bis.read();
+		bis.read(id);
+		secureMark=(char)bis.read();
+		bis.read(version);
+		InetAddress ipAddress=InetAddress.getByAddress(ip);
+		int portInfo=(port[0] << 8) + (port[1] << 0);
+		String idInfo=new String(id);
+		String versionInfo=new String(version);
+		CompilableDatagram datagram=new CompilableDatagram();
+		datagram.ipAddress=ipAddress;
+		datagram.idInfo=idInfo;
+		datagram.portInfo=portInfo;
+		datagram.serverMarkInfo=serverMark;
+		datagram.versionInfo=versionInfo;
+		return datagram;
+	}
+	private byte[] createDiscoverDatagram() throws IOException {
 		ByteArrayOutputStream bOut=new ByteArrayOutputStream();
 		if(finishInit) {
 			bOut.write(InetAddress.getLocalHost().getAddress());
@@ -82,7 +165,7 @@ public class ServiceDiscover {
 			port=-1;
 			while(port<0) {
 				port=maker.nextInt(9999)+30000;
-				if(isLocalPortUsing(port))
+				if(isLocalPortUsing(port)&&!manager.checkPort(port))
 					break;
 				else 
 					port=-1;
@@ -96,6 +179,7 @@ public class ServiceDiscover {
 			else
 				bOut.write(ClientMark);
 			bOut.write(signMaker.getSign().getO().getBytes());
+			bOut.write(this.SecureMark);
 			bOut.write(FileSyncNetInfo.version.getBytes());
 			return bOut.toByteArray();
 		}else
