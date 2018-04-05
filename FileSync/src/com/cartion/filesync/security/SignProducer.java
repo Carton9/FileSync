@@ -5,7 +5,7 @@ import java.security.NoSuchAlgorithmException;
 
 import com.carton.filesync.common.util.BiUnit;
 
-public class SignProducer {
+public class signProducer {
 	private String keyBase;
 	private String keyPeer;
 	private boolean avaliable;

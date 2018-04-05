@@ -9,11 +9,11 @@ public class FileSynchronizer {
 	Thread compileFileEvent;
 	boolean compileFileEventAlive;
 	FileEventComplier localMachine;
-	NetWorkSocketManager netWork;
+	NetworkSocketManager netWork;
 	String[] clientList;
 	String Servers;
 	Vector<String> queue=new Vector<String>();
-	public FileSynchronizer(FileEventComplier localMachine,NetWorkSocketManager netWork,String[] clientList,String Servers) {
+	public FileSynchronizer(FileEventComplier localMachine,NetworkSocketManager netWork,String[] clientList,String Servers) {
 		compileFileEventAlive=true;
 		compileFileEvent=new Thread() {
 			public void run() {
@@ -35,11 +35,11 @@ public class FileSynchronizer {
 	}
 	public FileSynchronizer(FileEventComplier localMachine,String[] clientList) {
 		this(localMachine,null,clientList,null);
-		this.netWork=new NetWorkSocketManager();
+		this.netWork=new NetworkSocketManager();
 	}
 	public FileSynchronizer(FileEventComplier localMachine,String Servers) {
 		this(localMachine,null,null,Servers);
-		this.netWork=new NetWorkSocketManager();
+		this.netWork=new NetworkSocketManager();
 	}
 	public boolean upGradeClientList(String[] list) {
 		if(clientList!=null) {
