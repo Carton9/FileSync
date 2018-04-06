@@ -14,7 +14,6 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import com.cartion.filesync.security.SignProducer;
 import com.carton.filesync.service.NetworkSocketManager;
 import com.carton.filesync.service.NetworkSocketManager.NetworkMachineInfomation;
 
@@ -33,7 +32,6 @@ public class ServiceDiscover {
 	DatagramPacket dp_receive;
 	Timer timer;
 	boolean finishInit;
-	SignProducer signMaker;
 	boolean isServer;
 	byte[] data;
 	int port;
@@ -49,9 +47,9 @@ public class ServiceDiscover {
 		timer=new Timer();
 		this.verifier=verifier;
 	}
-	public boolean loadInfo(SignProducer signMaker) {
+	public boolean loadInfo() {
 		finishInit=true;
-		this.signMaker=signMaker;
+		//.signMaker=signMaker;
 		try {
 			data=createDiscoverDatagram();
 		} catch (IOException e) {
