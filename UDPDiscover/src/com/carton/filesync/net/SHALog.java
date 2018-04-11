@@ -2,6 +2,9 @@ package com.carton.filesync.net;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
 
 public class SHALog extends SecurityLog {
 	public SHALog() {
@@ -9,13 +12,19 @@ public class SHALog extends SecurityLog {
 		connecterID=new String[1];
 		this.connecterCount=this.connecterID.length;
 	}
+	public SHALog(String id) {
+		this.id=id;
+		connecterID=new String[1];
+		this.connecterCount=this.connecterID.length;
+	}
 	@Override
 	public boolean veriftyID(String id) {
-		// TODO Auto-generated method stub
-		for(int i=0;i<connecterCount;i++) {
-			String currentID=SHA512(connecterID[i]+(System.currentTimeMillis()/this.TIMEOUT));
-			if(currentID.equals(id))
-				return true;
+		synchronized(connecterID) {
+			for(int i=0;i<connecterCount;i++) {
+				String currentID=SHA512(connecterID[i]+(System.currentTimeMillis()/this.TIMEOUT));
+				if(currentID.equals(id))
+					return true;
+			}
 		}
 		return false;
 	}
@@ -65,7 +74,14 @@ public class SHALog extends SecurityLog {
 	  }
 	@Override
 	public String addNewConnecter() {
-		// TODO Auto-generated method stub
-		return null;
+		synchronized(connecterID) {
+			String newID=SHA512((new Random()).nextLong()+this.id);
+			ArrayList<String> list=new ArrayList<String>();
+			list.addAll(Arrays.asList(this.connecterID));
+			list.add(newID);
+			connecterID=list.toArray(new String[list.size()]);
+			this.connecterCount=connecterID.length;
+			return newID;
+		}
 	}
 }
