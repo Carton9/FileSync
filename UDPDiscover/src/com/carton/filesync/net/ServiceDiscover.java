@@ -25,7 +25,7 @@ public class ServiceDiscover {
 	private void createDatagram() {
 		this.port=-1;
 		for(int i=30000;i<40000;i++) {
-			if(log.logPort(i)){
+			if(log.veriftyPort(i)){
 				port=i;
 				break;
 			}
@@ -57,6 +57,7 @@ public class ServiceDiscover {
 			InetAddress ip=dp_receive.getAddress();
 			int port=Integer.parseInt(infos[0]);
 			if(this.log.veriftyID(id)) {
+				this.log.logPort(port);
 				createDatagram();
 				
 			}

@@ -34,6 +34,13 @@ public abstract class SecurityLog implements NetworkVerifier{
 			return false;	
 		}
 	}
+	public synchronized void freePort(int port) {
+		synchronized(portsLog) {
+			if(portsLog[port]!=0) {
+				portsLog[port]=0;
+			}
+		}
+	}
 	public abstract String generateSign();
 	public abstract String addNewConnecter();
 	public static SecurityLog createLog(String key) {
