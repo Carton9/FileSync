@@ -1,8 +1,10 @@
 package com.carton.filesync.net;
 
+import java.io.Serializable;
+
 import com.carton.filesync.net.NetworkVerifier;
 
-public abstract class SecurityLog implements NetworkVerifier{
+public abstract class SecurityLog implements NetworkVerifier,Serializable{
 	protected static final int TIMEOUT=10*60*1000;//10 min
 	protected String id;
 	protected String connecterID[];
@@ -42,7 +44,16 @@ public abstract class SecurityLog implements NetworkVerifier{
 		}
 	}
 	public abstract String generateSign();
+	public abstract String generateSign(long time);
 	public abstract String addNewConnecter();
+	public String getConnecter(int count,long time) {
+		if(count<0&&count>=connecterID.length)
+			return "";
+		return this.generateSign(time);
+	}
+	public long getTime() {
+		return System.currentTimeMillis()/TIMEOUT;
+	}
 	public static SecurityLog createLog(String key) {
 		String informations[]=null;
 		SecurityLog log=null;

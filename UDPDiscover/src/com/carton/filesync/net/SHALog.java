@@ -84,4 +84,9 @@ public class SHALog extends SecurityLog {
 			return newID;
 		}
 	}
+	@Override
+	public String generateSign(long time) {
+		// TODO Auto-generated method stub
+		return SHA512(id+time);
+	}
 }
