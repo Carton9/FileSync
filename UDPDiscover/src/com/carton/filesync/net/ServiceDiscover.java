@@ -31,6 +31,16 @@ public class ServiceDiscover implements GeneralService {
 	public ServiceDiscover(boolean isServer) {
 		runningCount++;
 		this.isServer=isServer;
+		this.log=new SHALog();
+		byte[] buf=new byte[2048];
+		this.dp_receive=new DatagramPacket(buf, 2048);
+	}
+	public ServiceDiscover(boolean isServer,SecurityLog log) {
+		runningCount++;
+		this.isServer=isServer;
+		this.log=log;
+		byte[] buf=new byte[2048];
+		this.dp_receive=new DatagramPacket(buf, 2048);
 	}
 	@Override
 	public String getName() {
@@ -49,6 +59,7 @@ public class ServiceDiscover implements GeneralService {
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.out.println(e);
 		}
 	}
 	@Override
@@ -99,9 +110,14 @@ public class ServiceDiscover implements GeneralService {
 		if(this.port==-1)
 			return;
 		String dataString=log.generateSign()+"$"+port;
-		synchronized(data) {
+		if(data!=null) {
+			synchronized(data) {
+				data=dataString.getBytes();
+			}
+		}else {
 			data=dataString.getBytes();
 		}
+		
 	}
 	private byte[] getData() {
 		synchronized(data) {
@@ -142,9 +158,9 @@ public class ServiceDiscover implements GeneralService {
 				tempDS.close();
 			}
 		}catch(InterruptedIOException e){
-			
+			e.printStackTrace();
 		}catch(Exception e){
-			
+			e.printStackTrace();
 		}
 		System.out.println(this.getClass()+" recevie() "+tv);
 	}
@@ -177,9 +193,9 @@ public class ServiceDiscover implements GeneralService {
 				tempDS.close();
 			}
 		}catch(InterruptedIOException e){
-			
+			e.printStackTrace();
 		}catch(Exception e){
-			
+			e.printStackTrace();
 		}
 		System.out.println(this.getClass()+" recevie() "+tv);
 	}
