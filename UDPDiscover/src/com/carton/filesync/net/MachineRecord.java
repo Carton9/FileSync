@@ -11,6 +11,7 @@ public class MachineRecord {
 	private long time;
 	private static ConcurrentHashMap<String,MachineRecord> machineMap=new ConcurrentHashMap<String,MachineRecord>();
 	public static boolean logMachine(MachineRecord record) {
+		System.out.println(record.getId()+" "+record.getIp());
 		if(machineMap.containsKey(record.id))return false;
 		else machineMap.put(record.id, record);
 		return true;

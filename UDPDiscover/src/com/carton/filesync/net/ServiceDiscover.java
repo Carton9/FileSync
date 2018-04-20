@@ -6,9 +6,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import com.carton.filesync.common.util.GeneralService;
 
@@ -28,6 +31,7 @@ public class ServiceDiscover implements GeneralService {
 	TimerTask sendInfo;
 	SecurityLog log;
 	boolean isAlive=false;
+	String divider="@";
 	public ServiceDiscover(boolean isServer) {
 		runningCount++;
 		this.isServer=isServer;
@@ -51,11 +55,15 @@ public class ServiceDiscover implements GeneralService {
 	@Override
 	public void initialize() {
 		try {
-			ds = new DatagramSocket(receviePort);
+			if(isServer)
+				ds = new DatagramSocket(receviePort);
+			else
+				ds = new DatagramSocket(sendPort);
 			ds.setSoTimeout(TIMEOUT);
 			createDatagram();
 			this.stateFlags[0]=true;
 			isAlive=true;
+			System.out.println("initialize "+getName());
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -69,30 +77,43 @@ public class ServiceDiscover implements GeneralService {
 			public void run() {
 				// TODO Auto-generated method stub
 				try {
-					recevie();
+					try {
+						recevie();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 		});
-		if(isServer)
-			sendInfo=new TimerTask() {
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				try {
-					boardcast();
-				} catch (UnknownHostException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					return;
+		Thread boardcastThread=null;
+		if(isServer){
+			boardcastThread=new Thread() {
+				public void run() {
+					while(true) {
+						try {
+							boardcast();
+							Thread.sleep(1000);
+						} catch (UnknownHostException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					
+					}
 				}
-			}
-		};
+			};
+			boardcastThread.start();
+		}
+			
 		receiveThread.start();
 		while(isAlive);
 	}
@@ -109,7 +130,7 @@ public class ServiceDiscover implements GeneralService {
 		}
 		if(this.port==-1)
 			return;
-		String dataString=log.generateSign()+"$"+port;
+		String dataString=log.generateSign()+divider+port;
 		if(data!=null) {
 			synchronized(data) {
 				data=dataString.getBytes();
@@ -126,43 +147,57 @@ public class ServiceDiscover implements GeneralService {
 			return copyData;
 		}
 	}
-	private void recevie() throws IOException{
-		if(isServer)
-			recevieByServer();
-		else
-			recevieByClient();
+	private void recevie() throws IOException, InterruptedException{
+		while(isAlive) {
+			byte[] buf=new byte[2048];
+			this.dp_receive=new DatagramPacket(buf, 2048);
+			if(isServer){
+				recevieByServer();
+				Thread.sleep(20);
+			}
+			else
+				recevieByClient();
+		}
+		
 	}
 	private void recevieByClient() throws IOException {
 		int tv=0;
 		try {
+			//if(ds==null)
+			//	ds=new DatagramSocket(receviePort);
 			ds.receive(dp_receive);
 			byte[] data=dp_receive.getData();tv++;
 			String dataInfo=new String(data);
-			String[] infos=dataInfo.split("$");tv++;
+			
+			String[] infos=dataInfo.split(divider);tv++;
+			
 			if(infos.length<2)
 				return;
 			String id=infos[0];
 			InetAddress ip=dp_receive.getAddress();
-			int port=Integer.parseInt(infos[1]);
+			int port=Integer.parseInt(infos[1].replace(" ", "").trim());
 			if(this.log.veriftyID(id)&&this.log.logPort(port)) {
+				
 				MachineRecord.logMachine(ip, port, id, this.log.getTime());tv++;
 				//TODO reply 
-				String sendData=id+"$-1";
+				String sendData=id+divider+"-1";
 				DatagramSocket tempDS = new DatagramSocket(port);
 				tempDS.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,port));
 				tempDS.receive(dp_receive);
-				if(!new String(dp_receive.getData()).equals(log.generateSign()+"$-1")){
+				if(!new String(dp_receive.getData()).equals(log.generateSign()+divider+"-1")){
 					MachineRecord.removeMachine(id);
 					log.freePort(port);
 				}
 				tempDS.close();
 			}
+		}catch(SocketTimeoutException c){
+			System.out.println("time out client");
 		}catch(InterruptedIOException e){
 			e.printStackTrace();
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-		System.out.println(this.getClass()+" recevie() "+tv);
+		System.out.println(this.getClass()+" recevie() "+tv+" "+dp_receive.getLength());
 	}
 	private void recevieByServer() throws IOException {
 		int tv=0;
@@ -170,7 +205,7 @@ public class ServiceDiscover implements GeneralService {
 			ds.receive(dp_receive);
 			byte[] data=dp_receive.getData();tv++;
 			String dataInfo=new String(data);
-			String[] infos=dataInfo.split("$");tv++;
+			String[] infos=dataInfo.split(divider);tv++;
 			if(infos.length<2)
 				return;
 			String id=infos[0];
@@ -182,16 +217,18 @@ public class ServiceDiscover implements GeneralService {
 				createDatagram();
 				DatagramSocket tempDS = new DatagramSocket(port);
 				tempDS.receive(dp_receive);
-				if(!new String(dp_receive.getData()).equals(log.generateSign()+"$-1")){
+				if(!new String(dp_receive.getData()).equals(log.generateSign()+divider+"-1")){
 					MachineRecord.removeMachine(id);
 					log.freePort(port);
 				}else {
-					String sendData=id+"$-1";
+					String sendData=id+divider+"-1";
 					tempDS.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,port));
 					
 				}
 				tempDS.close();
 			}
+		}catch(SocketTimeoutException e){
+			System.out.println("time out server");
 		}catch(InterruptedIOException e){
 			e.printStackTrace();
 		}catch(Exception e){
@@ -200,13 +237,10 @@ public class ServiceDiscover implements GeneralService {
 		System.out.println(this.getClass()+" recevie() "+tv);
 	}
 	private void boardcast() throws UnknownHostException,IOException {
+		System.out.println("bc");
 		byte[] sendData=getData();
 		dp_send= new DatagramPacket(sendData,sendData.length,InetAddress.getByName("255.255.255.255"),sendPort);
-		synchronized(dp_send) {
-			synchronized(ds) {
-				ds.send(dp_send);
-			}
-		}
+		ds.send(dp_send);
 	}
 	
 }
