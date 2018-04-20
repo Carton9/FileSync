@@ -5,8 +5,8 @@ public class TestMain {
 	public static void main(String[] args) {
 		SHALog serverLog=new SHALog((new SHALog()).generateSign());
 		SHALog clientLog=new SHALog(serverLog.addNewConnecter());
-		ServiceDiscover discover1=new ServiceDiscover(false,serverLog);
-		ServiceDiscover discover2=new ServiceDiscover(true,clientLog);
+		ServiceDiscover discover1=new ServiceDiscover(false,serverLog,new NetworkManager());
+		ServiceDiscover discover2=new ServiceDiscover(true,clientLog,new NetworkManager());
 		discover1.initialize();
 		discover2.initialize();
 		GeneralServiceExecutePool pool=new GeneralServiceExecutePool();

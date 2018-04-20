@@ -32,6 +32,8 @@ public class ServiceDiscover implements GeneralService {
 	SecurityLog log;
 	boolean isAlive=false;
 	String divider="@";
+	String endPoint="#";
+	NetworkManager manager;
 	public ServiceDiscover(boolean isServer) {
 		runningCount++;
 		this.isServer=isServer;
@@ -39,11 +41,12 @@ public class ServiceDiscover implements GeneralService {
 		byte[] buf=new byte[2048];
 		this.dp_receive=new DatagramPacket(buf, 2048);
 	}
-	public ServiceDiscover(boolean isServer,SecurityLog log) {
+	public ServiceDiscover(boolean isServer,SecurityLog log,NetworkManager manager) {
 		runningCount++;
 		this.isServer=isServer;
 		this.log=log;
 		byte[] buf=new byte[2048];
+		this.manager=manager;
 		this.dp_receive=new DatagramPacket(buf, 2048);
 	}
 	@Override
@@ -152,8 +155,8 @@ public class ServiceDiscover implements GeneralService {
 			byte[] buf=new byte[2048];
 			this.dp_receive=new DatagramPacket(buf, 2048);
 			if(isServer){
+				System.out.println("server");
 				recevieByServer();
-				Thread.sleep(20);
 			}
 			else
 				recevieByClient();
@@ -168,27 +171,33 @@ public class ServiceDiscover implements GeneralService {
 			ds.receive(dp_receive);
 			byte[] data=dp_receive.getData();tv++;
 			String dataInfo=new String(data);
-			
 			String[] infos=dataInfo.split(divider);tv++;
-			
 			if(infos.length<2)
 				return;
 			String id=infos[0];
 			InetAddress ip=dp_receive.getAddress();
 			int port=Integer.parseInt(infos[1].replace(" ", "").trim());
+			////////////////////////////////////////////////////////
 			if(this.log.veriftyID(id)&&this.log.logPort(port)) {
-				
-				MachineRecord.logMachine(ip, port, id, this.log.getTime());tv++;
+				if(manager.isLogged(id))
+					return;
+				manager.logMachine(ip, port, id.trim(), this.log.getTime());tv++;
 				//TODO reply 
-				String sendData=id+divider+"-1";
+				String sendData=log.generateSign()+divider+port;
+				byte[] buf=new byte[2048];
+				DatagramPacket tempR=new DatagramPacket(buf, 2048);
 				DatagramSocket tempDS = new DatagramSocket(port);
-				tempDS.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,port));
-				tempDS.receive(dp_receive);
-				if(!new String(dp_receive.getData()).equals(log.generateSign()+divider+"-1")){
-					MachineRecord.removeMachine(id);
-					log.freePort(port);
+				System.out.println(tempDS.getLocalPort());
+				tempDS.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,this.receviePort));
+				tempDS.receive(tempR);
+				String recevie=new String(tempR.getData());
+				if(recevie.contains(endPoint)) {
+					if(!recevie.split(endPoint)[0].equals(log.generateSign()+divider)){
+						manager.removeMachine(id);
+						log.freePort(port);
+					}
+					tempDS.close();
 				}
-				tempDS.close();
 			}
 		}catch(SocketTimeoutException c){
 			System.out.println("time out client");
@@ -197,34 +206,29 @@ public class ServiceDiscover implements GeneralService {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-		System.out.println(this.getClass()+" recevie() "+tv+" "+dp_receive.getLength());
+		System.out.println(this.getClass()+" recevieByClient() "+tv+" "+dp_receive.getLength());
 	}
 	private void recevieByServer() throws IOException {
 		int tv=0;
 		try {
 			ds.receive(dp_receive);
 			byte[] data=dp_receive.getData();tv++;
+		
 			String dataInfo=new String(data);
+			System.out.println(dataInfo);
 			String[] infos=dataInfo.split(divider);tv++;
 			if(infos.length<2)
 				return;
 			String id=infos[0];
 			InetAddress ip=dp_receive.getAddress();
-			int port=Integer.parseInt(infos[1]);
+			int port=Integer.parseInt(infos[1].trim());
 			if(this.log.veriftyID(id)) {
 				this.log.logPort(port);
-				MachineRecord.logMachine(ip, port, id, this.log.getTime());tv++;
+				manager.logMachine(ip, port, id, this.log.getTime());tv++;
 				createDatagram();
 				DatagramSocket tempDS = new DatagramSocket(port);
-				tempDS.receive(dp_receive);
-				if(!new String(dp_receive.getData()).equals(log.generateSign()+divider+"-1")){
-					MachineRecord.removeMachine(id);
-					log.freePort(port);
-				}else {
-					String sendData=id+divider+"-1";
-					tempDS.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,port));
-					
-				}
+				String sendData=log.generateSign()+divider+endPoint;
+				tempDS.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,port));
 				tempDS.close();
 			}
 		}catch(SocketTimeoutException e){
@@ -234,7 +238,7 @@ public class ServiceDiscover implements GeneralService {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-		System.out.println(this.getClass()+" recevie() "+tv);
+		System.out.println(this.getClass()+" recevieByServer() "+tv);
 	}
 	private void boardcast() throws UnknownHostException,IOException {
 		System.out.println("bc");
