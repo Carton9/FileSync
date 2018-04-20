@@ -5,21 +5,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class NetworkManager {
-	public HashMap<String,MachineRecord> machineMap;
+	protected HashMap<String,MachineRecord> machineMap;
 	public NetworkManager() {
 		machineMap=new HashMap<String,MachineRecord>();
 	}
 	public boolean logMachine(MachineRecord record) {
 		
-		System.out.println(machineMap.size());
+		//System.out.println(machineMap.size());
 		synchronized(machineMap) {
-			System.out.println(machineMap.size());
+			//System.out.println(machineMap.size());
 			for(String i:machineMap.keySet()) {
 				if(i.equals(record.getId()))
 					return false;
 			}
 			machineMap.put(record.getId(), record);
-			System.out.println("get " +machineMap.size());
+		//	System.out.println("get " +machineMap.size());
 		}
 		return true;
 	}
@@ -30,6 +30,7 @@ public class NetworkManager {
 		synchronized(machineMap) {return machineMap.get(id);}
 		}
 	public boolean isLogged(String id) {
+		//System.out.println("size "+machineMap.size());
 		return machineMap.containsKey(id);
 	}
 	public boolean removeMachine(String id) {

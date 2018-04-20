@@ -155,11 +155,11 @@ public class ServiceDiscover implements GeneralService {
 			byte[] buf=new byte[2048];
 			this.dp_receive=new DatagramPacket(buf, 2048);
 			if(isServer){
-				System.out.println("server");
 				recevieByServer();
 			}
 			else
 				recevieByClient();
+			System.out.println(this.getClass()+" recevie() "+isServer+" "+manager.machineMap.size());
 		}
 		
 	}
@@ -169,9 +169,9 @@ public class ServiceDiscover implements GeneralService {
 			//if(ds==null)
 			//	ds=new DatagramSocket(receviePort);
 			ds.receive(dp_receive);
-			byte[] data=dp_receive.getData();tv++;
+			byte[] data=dp_receive.getData();tv++;// 1
 			String dataInfo=new String(data);
-			String[] infos=dataInfo.split(divider);tv++;
+			String[] infos=dataInfo.split(divider);tv++;// 2
 			if(infos.length<2)
 				return;
 			String id=infos[0];
@@ -179,24 +179,28 @@ public class ServiceDiscover implements GeneralService {
 			int port=Integer.parseInt(infos[1].replace(" ", "").trim());
 			////////////////////////////////////////////////////////
 			if(this.log.veriftyID(id)&&this.log.logPort(port)) {
+				tv++;// 3
 				if(manager.isLogged(id))
 					return;
-				manager.logMachine(ip, port, id.trim(), this.log.getTime());tv++;
+				manager.logMachine(ip, port, id.trim(), this.log.getTime());tv++;// 4
 				//TODO reply 
 				String sendData=log.generateSign()+divider+port;
 				byte[] buf=new byte[2048];
 				DatagramPacket tempR=new DatagramPacket(buf, 2048);
 				DatagramSocket tempDS = new DatagramSocket(port);
-				System.out.println(tempDS.getLocalPort());
+				//System.out.println(tempDS.getLocalPort());
 				tempDS.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,this.receviePort));
-				tempDS.receive(tempR);
+				tempDS.receive(tempR);tv++;// 5
 				String recevie=new String(tempR.getData());
+				System.out.println(recevie);
 				if(recevie.contains(endPoint)) {
-					if(!recevie.split(endPoint)[0].equals(log.generateSign()+divider)){
+					String idn=recevie.split(divider+endPoint)[0].trim();
+					System.out.println(idn);
+					if(!this.log.veriftyID(idn)){
 						manager.removeMachine(id);
-						log.freePort(port);
+						log.freePort(port);tv++;// 6
 					}
-					tempDS.close();
+					tempDS.close();// 
 				}
 			}
 		}catch(SocketTimeoutException c){
@@ -207,29 +211,31 @@ public class ServiceDiscover implements GeneralService {
 			e.printStackTrace();
 		}
 		System.out.println(this.getClass()+" recevieByClient() "+tv+" "+dp_receive.getLength());
+		tv=0;
 	}
 	private void recevieByServer() throws IOException {
 		int tv=0;
 		try {
 			ds.receive(dp_receive);
-			byte[] data=dp_receive.getData();tv++;
-		
+			byte[] data=dp_receive.getData();tv++;// 1
 			String dataInfo=new String(data);
-			System.out.println(dataInfo);
-			String[] infos=dataInfo.split(divider);tv++;
+			//System.out.println(dataInfo);
+			String[] infos=dataInfo.split(divider);tv++;// 2
+			
 			if(infos.length<2)
 				return;
 			String id=infos[0];
 			InetAddress ip=dp_receive.getAddress();
 			int port=Integer.parseInt(infos[1].trim());
+			System.out.println(this.log.veriftyID(id));
 			if(this.log.veriftyID(id)) {
+				
 				this.log.logPort(port);
-				manager.logMachine(ip, port, id, this.log.getTime());tv++;
+				manager.logMachine(ip, port, id, this.log.getTime());tv++;// 3
 				createDatagram();
-				DatagramSocket tempDS = new DatagramSocket(port);
 				String sendData=log.generateSign()+divider+endPoint;
-				tempDS.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,port));
-				tempDS.close();
+				ds.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,port));
+				tv++;// 4
 			}
 		}catch(SocketTimeoutException e){
 			System.out.println("time out server");
@@ -239,9 +245,10 @@ public class ServiceDiscover implements GeneralService {
 			e.printStackTrace();
 		}
 		System.out.println(this.getClass()+" recevieByServer() "+tv);
+		tv=0;
 	}
 	private void boardcast() throws UnknownHostException,IOException {
-		System.out.println("bc");
+	//	System.out.println("bc");
 		byte[] sendData=getData();
 		dp_send= new DatagramPacket(sendData,sendData.length,InetAddress.getByName("255.255.255.255"),sendPort);
 		ds.send(dp_send);

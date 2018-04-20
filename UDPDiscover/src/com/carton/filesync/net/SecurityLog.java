@@ -7,9 +7,31 @@ import com.carton.filesync.net.NetworkVerifier;
 public abstract class SecurityLog implements NetworkVerifier,Serializable{
 	protected static final int TIMEOUT=10*60*1000;//10 min
 	protected String id;
+	protected String parent;
 	protected String connecterID[];
 	protected int connecterCount;
 	protected int portsLog[]=new int[65536];//0 not used,1 logged,-1 using
+	public SecurityLog() {
+		this("","");
+	}
+	public SecurityLog(String sign) {
+		this(sign,"");
+	}
+	public SecurityLog(String sign,String parent) {
+		System.out.println(sign+" "+parent);
+		if(!sign.equals(""))
+			this.id=sign;
+		if(!parent.equals(""))
+			this.parent=parent;
+		connecterID=new String[1];
+		if(!parent.equals(""))
+			connecterID[0]=parent;
+		this.connecterCount=this.connecterID.length;
+		
+	}
+	public SecurityLog(SecurityLog parentLog) {
+		this(parentLog.addNewConnecter(),parentLog.id);
+	}
 	public abstract boolean isConnecter(String connecter);
 	public synchronized boolean veriftyPort(int port) {
 		synchronized(portsLog) {

@@ -17,6 +17,9 @@ public class SHALog extends SecurityLog {
 		connecterID=new String[1];
 		this.connecterCount=this.connecterID.length;
 	}
+	public SHALog(SHALog parentLog) {
+		super(parentLog.addNewConnecter(),parentLog.id);
+	}
 	@Override
 	public boolean veriftyID(String id) {
 		synchronized(connecterID) {

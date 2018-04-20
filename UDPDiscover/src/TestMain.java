@@ -3,8 +3,9 @@ import com.carton.filesync.net.*;
 
 public class TestMain {
 	public static void main(String[] args) {
-		SHALog serverLog=new SHALog((new SHALog()).generateSign());
-		SHALog clientLog=new SHALog(serverLog.addNewConnecter());
+		SHALog serverLog=new SHALog();
+		SHALog clientLog=new SHALog(serverLog);
+		//System.out.println(serverLog.veriftyID(clientLog.generateSign()));
 		ServiceDiscover discover1=new ServiceDiscover(false,serverLog,new NetworkManager());
 		ServiceDiscover discover2=new ServiceDiscover(true,clientLog,new NetworkManager());
 		discover1.initialize();
