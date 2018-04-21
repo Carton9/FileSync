@@ -55,6 +55,10 @@ public class GeneralServiceExecutePool {
 	}
 	public void closePool() {
 		isClose.set(true);
+		for(PoolUnit i:list.values()) {
+			i.getService().finish();
+		}
 		pool.shutdown();
+		pool.shutdownNow();
 	}
 }

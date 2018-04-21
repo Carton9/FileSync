@@ -34,6 +34,8 @@ public class ServiceDiscover implements GeneralService {
 	String divider="@";
 	String endPoint="#";
 	NetworkManager manager;
+	Thread receiveThread;
+	Thread boardcastThread;
 	public ServiceDiscover(boolean isServer) {
 		runningCount++;
 		this.isServer=isServer;
@@ -54,7 +56,6 @@ public class ServiceDiscover implements GeneralService {
 		// TODO Auto-generated method stub
 		return "Service Discover "+runningCount;
 	}
-	
 	@Override
 	public void initialize() {
 		try {
@@ -75,7 +76,7 @@ public class ServiceDiscover implements GeneralService {
 	}
 	@Override
 	public void execute() {
-		Thread receiveThread=new Thread(new Runnable() {
+		receiveThread=new Thread(new Runnable() {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
@@ -92,14 +93,14 @@ public class ServiceDiscover implements GeneralService {
 				}
 			}
 		});
-		Thread boardcastThread=null;
+		
 		if(isServer){
 			boardcastThread=new Thread() {
 				public void run() {
 					while(true) {
 						try {
 							boardcast();
-							Thread.sleep(1000);
+							Thread.sleep(30000);
 						} catch (UnknownHostException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -116,12 +117,21 @@ public class ServiceDiscover implements GeneralService {
 			};
 			boardcastThread.start();
 		}
-			
 		receiveThread.start();
-		while(isAlive);
 	}
 	@Override
 	public void finish() {
+		System.out.println("finish"+ isAlive);
+		isAlive=false;
+		System.out.println("finish"+ isAlive);
+		ds.close();
+		receiveThread.interrupt();
+		receiveThread.stop();
+		if(boardcastThread!=null) {
+			boardcastThread.interrupt();
+			boardcastThread.stop();
+		}
+		
 	}
 	private void createDatagram() {
 		this.port=-1;
