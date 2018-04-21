@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 
 import com.carton.filesync.common.util.GeneralServiceExecutePool;
 import com.carton.filesync.file.UniversalFileIO;
@@ -76,13 +77,15 @@ public class TestMain {
 		p.start();
 		p2.start();
 		c2.start();*/
-		/*socket=new DuplexControlSocket("127.0.0.1",3000);
+		System.out.print("Input the ip you want to connect: ");
+		Scanner reader=new Scanner(System.in);
+		socket=new DuplexControlSocket(reader.nextLine(),3000);
 		ArrayList<Integer> b=new ArrayList<Integer>();
 		b.add(1);
 		//ObejctFrame<ArrayList> of=new ObejctFrame<ArrayList>(b);
 		File ff=new File("target.txt");
 		System.out.println(ff.exists());
-		for(int i=0;i<1;i++) {
+		for(int i=0;i<10;i++) {
 			UniversalFileIO io=new UniversalFileIO(ff);
 			//io.load();
 			TCPFrame of=TCPFrame.createFrame(io);
@@ -91,7 +94,8 @@ public class TestMain {
 			Thread.sleep((new Random()).nextInt(1000)+10);
 			System.out.println("send");
 		}
-		*/SHALog serverLog=new SHALog();
+		
+		SHALog serverLog=new SHALog();
 		SHALog clientLog=new SHALog(serverLog);
 		//System.out.println(serverLog.veriftyID(clientLog.generateSign()));
 		ServiceDiscover discover1=new ServiceDiscover(false,serverLog,new NetworkManager());
