@@ -2,11 +2,12 @@ package com.carton.filesync.net;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.List;
 
 import com.cartion.filesync.security.DECKey;
 import com.cartion.filesync.security.KeyUnit;
 
-public class DuplexControlSocket {
+public class DuplexControlSocket implements AutoCloseable{
 	ControlSocket Ssocket;
 	ControlSocket Csocket;
 	Thread PortListener;
@@ -85,6 +86,8 @@ public class DuplexControlSocket {
 				}
 			}
 		};
+		PortListener.start();
+		PipeListener.start();
 	}
 	public DuplexControlSocket(String ip,int port,KeyUnit key) throws IOException, InterruptedException {
 		this(InetAddress.getByName(ip),port,key);
@@ -92,10 +95,30 @@ public class DuplexControlSocket {
 	public DuplexControlSocket(String ip,int port) throws IOException, InterruptedException {
 		this(ip,port,null);
 	}
-	public boolean submitFrame(TCPFrame frame) throws IOException {
-		return Csocket.submitFrame(frame);
+	public synchronized boolean submitFrame(TCPFrame frame) throws IOException {
+		synchronized(Csocket) {
+			return Csocket.submitFrame(frame);
+		}
 	}
-	public ResultQueue getResultQueue() {
-		return Ssocket.getResultQueue();
+	public synchronized boolean submitFrame(List<TCPFrame> frames) throws IOException {
+		synchronized(Csocket) {
+			return Csocket.submitFrame(frames);
+		}
+	}
+	public synchronized ResultQueue getResultQueue() {
+		synchronized(Ssocket) {
+			return Ssocket.getResultQueue();
+		}
+	}
+	@Override
+	public synchronized void close() throws Exception {
+		synchronized(Ssocket) {
+			Ssocket.close();
+		}
+		synchronized(Csocket) {
+			Csocket.close();
+		}
+		PortListener.stop();
+		PipeListener.stop();
 	}
 }

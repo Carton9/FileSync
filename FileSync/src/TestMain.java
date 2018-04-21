@@ -7,15 +7,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
+import com.carton.filesync.common.util.GeneralServiceExecutePool;
 import com.carton.filesync.file.UniversalFileIO;
 import com.carton.filesync.net.*;
 
 public class TestMain {
 	static ControlSocket Ssocket=null;
 	static ControlSocket Csocket=null;
+	static DuplexControlSocket socket=null;
 	public static void main(String[] args) throws InterruptedException, IOException {
 		// TODO Auto-generated method stub
-		Thread a=new Thread() {
+		/*Thread a=new Thread() {
 			public void run() {
 				try {
 					Csocket=new SecurityControlSocket("127.0.0.1",3000);
@@ -73,7 +75,8 @@ public class TestMain {
 		};
 		p.start();
 		p2.start();
-		c2.start();
+		c2.start();*/
+		/*socket=new DuplexControlSocket("127.0.0.1",3000);
 		ArrayList<Integer> b=new ArrayList<Integer>();
 		b.add(1);
 		//ObejctFrame<ArrayList> of=new ObejctFrame<ArrayList>(b);
@@ -84,11 +87,27 @@ public class TestMain {
 			//io.load();
 			TCPFrame of=TCPFrame.createFrame(io);
 			System.out.println(of.getClass());
-			Ssocket.submitFrame(of);
+			socket.submitFrame(of);
 			Thread.sleep((new Random()).nextInt(1000)+10);
 			System.out.println("send");
 		}
-		
+		*/SHALog serverLog=new SHALog();
+		SHALog clientLog=new SHALog(serverLog);
+		//System.out.println(serverLog.veriftyID(clientLog.generateSign()));
+		ServiceDiscover discover1=new ServiceDiscover(false,serverLog,new NetworkManager());
+		ServiceDiscover discover2=new ServiceDiscover(true,clientLog,new NetworkManager());
+		discover1.initialize();
+		discover2.initialize();
+		GeneralServiceExecutePool pool=new GeneralServiceExecutePool();
+		System.out.println("lunch");
+		pool.lunchUnit(discover2);
+		System.out.println("lunch2");
+		pool.lunchUnit(discover1);
+		for(int i=0;i<3;i++){
+			Thread.sleep(9000);
+			System.out.println("# "+i);
+		}
+		pool.closePool();
 	}
 	
 	 public static void writeInt(int v) throws IOException {

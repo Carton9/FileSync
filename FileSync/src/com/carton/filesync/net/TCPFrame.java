@@ -2,6 +2,7 @@ package com.carton.filesync.net;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 
 import com.carton.filesync.file.FileIO;
 import com.carton.filesync.file.UniversalFileIO;
@@ -64,8 +65,8 @@ public abstract class TCPFrame{
 		}
 		return null;
 	}
-	public static<T> TCPFrame createFrame(T Object) {
-		return new ObejctFrame<T>(Object);
+	public static TCPFrame createFrame(Serializable Object) {
+		return new ObejctFrame(Object);
 	}
 	public static TCPFrame createFrame(FileIO Object) {
 		if(Object.mappedMode())
