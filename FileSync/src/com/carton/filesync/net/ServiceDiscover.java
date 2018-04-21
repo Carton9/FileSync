@@ -1,180 +1,267 @@
 package com.carton.filesync.net;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.Random;
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
-import com.carton.filesync.service.NetworkSocketManager;
-import com.carton.filesync.service.NetworkSocketManager.NetworkMachineInfomation;
+import com.carton.filesync.common.util.GeneralService;
 
-public class ServiceDiscover {
-	private static final int TIMEOUT = 1000;
-	private static final int MAXNUM = 3; 
-	private static final int sendPort=40000;
-	private static final int receviePort=40001;
-	public static final byte ClientMark=(byte)'c';
-	public static final byte ServerMark=(byte)'s';
-	public static final byte SecureMark=(byte)'S';
-	public static final byte UnSecureMark=(byte)'U';
-	InetAddress broadcast;
+public class ServiceDiscover implements GeneralService {
+	private static int runningCount=0;
+	private static final int TIMEOUT = 5000;
+	int sendPort=29999;
+	int receviePort=29998;
+	InetAddress locoal;
 	DatagramSocket ds;
 	DatagramPacket dp_send;
 	DatagramPacket dp_receive;
 	Timer timer;
-	boolean finishInit;
 	boolean isServer;
 	byte[] data;
 	int port;
 	TimerTask sendInfo;
-	TimerTask renewInfo;
-	NetworkVerifier verifier;
-	
-	public ServiceDiscover(boolean isServer,NetworkVerifier verifier) throws SocketException, UnknownHostException {
-		ds = new DatagramSocket(receviePort);
-		broadcast = InetAddress.getByName("255.255.255.255");
-		ds.setSoTimeout(TIMEOUT);
+	SecurityLog log;
+	boolean isAlive=false;
+	String divider="@";
+	String endPoint="#";
+	NetworkManager manager;
+	Thread receiveThread;
+	Thread boardcastThread;
+	public ServiceDiscover(boolean isServer) {
+		runningCount++;
 		this.isServer=isServer;
-		timer=new Timer();
-		this.verifier=verifier;
+		this.log=new SHALog();
+		byte[] buf=new byte[2048];
+		this.dp_receive=new DatagramPacket(buf, 2048);
 	}
-	public boolean loadInfo() {
-		finishInit=true;
-		//.signMaker=signMaker;
+	public ServiceDiscover(boolean isServer,SecurityLog log,NetworkManager manager) {
+		runningCount++;
+		this.isServer=isServer;
+		this.log=log;
+		byte[] buf=new byte[2048];
+		this.manager=manager;
+		this.dp_receive=new DatagramPacket(buf, 2048);
+	}
+	@Override
+	public String getName() {
+		// TODO Auto-generated method stub
+		return "Service Discover "+runningCount;
+	}
+	@Override
+	public void initialize() {
 		try {
-			data=createDiscoverDatagram();
-		} catch (IOException e) {
+			if(isServer)
+				ds = new DatagramSocket(receviePort);
+			else
+				ds = new DatagramSocket(sendPort);
+			ds.setSoTimeout(TIMEOUT);
+			createDatagram();
+			this.stateFlags[0]=true;
+			isAlive=true;
+			System.out.println("initialize "+getName());
+		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return false;
+			System.out.println(e);
 		}
-		return true;
 	}
-	public void init() throws SocketException {
-		ds.setSoTimeout(TIMEOUT);
-		sendInfo=new TimerTask() {
+	@Override
+	public void execute() {
+		receiveThread=new Thread(new Runnable() {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				synchronized(data) {
-					if(data==null)
-						return;
-					dp_send=new DatagramPacket(data,data.length,broadcast,sendPort);
-				}
-				synchronized(ds) {
+				try {
 					try {
-						ds.send(dp_send);
-					} catch (IOException e) {
+						recevie();
+					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-			}};
-		renewInfo=new TimerTask() {
-
-				@Override
+			}
+		});
+		
+		if(isServer){
+			boardcastThread=new Thread() {
 				public void run() {
-					// TODO Auto-generated method stub
-					synchronized(data) {
+					while(true) {
 						try {
-							data=createDiscoverDatagram();
+							boardcast();
+							Thread.sleep(30000);
+						} catch (UnknownHostException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
 						}
+					
 					}
 				}
-				
 			};
-		timer.schedule(sendInfo,1000);
-		timer.schedule(renewInfo,30*60*1000);
+			boardcastThread.start();
+		}
+		receiveThread.start();
 	}
-	public CompilableDatagram execute() {
-		CompilableDatagram datagram;
+	@Override
+	public void finish() {
+		System.out.println("finish"+ isAlive);
+		isAlive=false;
+		System.out.println("finish"+ isAlive);
+		ds.close();
+		receiveThread.interrupt();
+		receiveThread.stop();
+		if(boardcastThread!=null) {
+			boardcastThread.interrupt();
+			boardcastThread.stop();
+		}
+		
+	}
+	private void createDatagram() {
+		this.port=-1;
+		for(int i=30000;i<40000;i++) {
+			if(log.veriftyPort(i)){
+				port=i;
+				break;
+			}
+		}
+		if(this.port==-1)
+			return;
+		String dataString=log.generateSign()+divider+port;
+		if(data!=null) {
+			synchronized(data) {
+				data=dataString.getBytes();
+			}
+		}else {
+			data=dataString.getBytes();
+		}
+		
+	}
+	private byte[] getData() {
+		synchronized(data) {
+			byte[] copyData=new byte[data.length];
+			System.arraycopy(data, 0, copyData, 0, data.length);
+			return copyData;
+		}
+	}
+	private void recevie() throws IOException, InterruptedException{
+		while(isAlive) {
+			byte[] buf=new byte[2048];
+			this.dp_receive=new DatagramPacket(buf, 2048);
+			if(isServer){
+				recevieByServer();
+			}
+			else
+				recevieByClient();
+			System.out.println(this.getClass()+" recevie() "+isServer+" "+manager.machineMap.size());
+		}
+		
+	}
+	private void recevieByClient() throws IOException {
+		int tv=0;
 		try {
-			datagram = recevie();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			//if(ds==null)
+			//	ds=new DatagramSocket(receviePort);
+			ds.receive(dp_receive);
+			byte[] data=dp_receive.getData();tv++;// 1
+			String dataInfo=new String(data);
+			String[] infos=dataInfo.split(divider);tv++;// 2
+			if(infos.length<2)
+				return;
+			String id=infos[0];
+			InetAddress ip=dp_receive.getAddress();
+			int port=Integer.parseInt(infos[1].replace(" ", "").trim());
+			////////////////////////////////////////////////////////
+			if(this.log.veriftyID(id)&&this.log.logPort(port)) {
+				tv++;// 3
+				if(manager.isLogged(id))
+					return;
+				manager.logMachine(ip, port, id.trim(), this.log.getTime());tv++;// 4
+				//TODO reply 
+				String sendData=log.generateSign()+divider+port;
+				byte[] buf=new byte[2048];
+				DatagramPacket tempR=new DatagramPacket(buf, 2048);
+				DatagramSocket tempDS = new DatagramSocket(port);
+				//System.out.println(tempDS.getLocalPort());
+				tempDS.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,this.receviePort));
+				tempDS.receive(tempR);tv++;// 5
+				String recevie=new String(tempR.getData());
+				System.out.println(recevie);
+				if(recevie.contains(endPoint)) {
+					String idn=recevie.split(divider+endPoint)[0].trim();
+					System.out.println(idn);
+					if(!this.log.veriftyID(idn)){
+						manager.removeMachine(id);
+						log.freePort(port);tv++;// 6
+					}
+					tempDS.close();// 
+				}
+			}
+		}catch(SocketTimeoutException c){
+			System.out.println("time out client");
+		}catch(InterruptedIOException e){
 			e.printStackTrace();
-			return null;
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-		if(datagram==null)
-			return null;
-		if(this.isServer&&datagram.serverMarkInfo==this.ClientMark) {
-			if(verifier.veriftyID(datagram.idInfo))
-				return datagram;
-			return null;
-		}
-		else if(!this.isServer&&datagram.serverMarkInfo==this.ServerMark){
-			if(verifier.veriftyID(datagram.idInfo))
-				return datagram;
-			return null;
-		}
-		return null;
+		System.out.println(this.getClass()+" recevieByClient() "+tv+" "+dp_receive.getLength());
+		tv=0;
 	}
-	private void serverProcess(CompilableDatagram datagram) {
-	}
-	private CompilableDatagram recevie() throws IOException {
-		byte[] buff=new byte[CompilableDatagram.getDataLength()];
-		dp_receive = new DatagramPacket(buff, CompilableDatagram.getDataLength());
+	private void recevieByServer() throws IOException {
+		int tv=0;
 		try {
 			ds.receive(dp_receive);
-		}catch(InterruptedIOException e){
-			return null;
-		}
-		buff=dp_receive.getData();
-		CompilableDatagram datagram=CompilableDatagram.decompileData(buff);
-		return datagram;
-	}
-	private byte[] createDiscoverDatagram() throws IOException {
-		if(finishInit&&isServer) {
-			Random maker=new Random();
-			port=-1;
-			while(port<0) {
-				port=maker.nextInt(9999)+30000;
-				if(isLocalPortUsing(port)&&!verifier.veriftyPort(port))
-					break;
-				else 
-					port=-1;
+			byte[] data=dp_receive.getData();tv++;// 1
+			String dataInfo=new String(data);
+			//System.out.println(dataInfo);
+			String[] infos=dataInfo.split(divider);tv++;// 2
+			
+			if(infos.length<2)
+				return;
+			String id=infos[0];
+			InetAddress ip=dp_receive.getAddress();
+			int port=Integer.parseInt(infos[1].trim());
+			System.out.println(this.log.veriftyID(id));
+			if(this.log.veriftyID(id)) {
+				
+				this.log.logPort(port);
+				manager.logMachine(ip, port, id, this.log.getTime());tv++;// 3
+				createDatagram();
+				String sendData=log.generateSign()+divider+endPoint;
+				ds.send(new DatagramPacket(sendData.getBytes(),sendData.length(),ip,port));
+				tv++;// 4
 			}
-			CompilableDatagram datagram=new CompilableDatagram();
-			datagram.serverMarkInfo=ServerMark;
-			datagram.ipAddress=InetAddress.getLocalHost();
-			datagram.idInfo="";
-			datagram.portInfo=port;
-			datagram.secureMark=(char) this.SecureMark;
-			datagram.versionInfo=FileSyncNetInfo.version;
-			return datagram.compileInformation();
-		}else
-			return null;
+		}catch(SocketTimeoutException e){
+			System.out.println("time out server");
+		}catch(InterruptedIOException e){
+			e.printStackTrace();
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		System.out.println(this.getClass()+" recevieByServer() "+tv);
+		tv=0;
 	}
-	private static boolean isLocalPortUsing(int port){  
-        boolean flag = true;  
-        try {
-            flag = isPortUsing("127.0.0.1", port);  
-        } catch (Exception e) {  
-        }  
-        return flag;  
-    } 
-    private static boolean isPortUsing(String host,int port) throws UnknownHostException{  
-        boolean flag = false;  
-        InetAddress Address = InetAddress.getByName(host);  
-        try {  
-            Socket socket = new Socket(Address,port);
-            flag = true;  
-            socket.close();
-        } catch (IOException e) {  
-
-        }  
-        return flag;  
-    }  
+	private void boardcast() throws UnknownHostException,IOException {
+	//	System.out.println("bc");
+		byte[] sendData=getData();
+		dp_send= new DatagramPacket(sendData,sendData.length,InetAddress.getByName("255.255.255.255"),sendPort);
+		ds.send(dp_send);
+	}
+	
 }
