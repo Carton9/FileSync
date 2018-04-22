@@ -7,7 +7,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
-public class DECKey implements KeyUnit {
+public class DECKey extends KeyUnit {
 	private static String testKey="3356360843822592";
 	private String key;
 	public DECKey(String key) {

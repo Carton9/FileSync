@@ -20,26 +20,32 @@ public class SecurityControlSocket extends ControlSocket{
 	public SecurityControlSocket(String ip,int port,KeyUnit key) throws IOException {
 		super(ip,port);
 		this.key=key;
+		this.controlPipe=new SecureSocket(this.controlPipe,key);
 	}
 	public SecurityControlSocket(InetAddress ip,int port,KeyUnit key) throws IOException {
 		super(ip,port);
 		this.key=key;
+		this.controlPipe=new SecureSocket(this.controlPipe,key);
 	}
 	public SecurityControlSocket(int port,KeyUnit key) throws IOException {
 		super(port);
 		this.key=key;
+		this.controlPipe=new SecureSocket(this.controlPipe,key);
 	}
 	public SecurityControlSocket(InetAddress ip,int port) throws IOException {
 		super(ip,port);
 		key=DECKey.getdefultKey();
+		this.controlPipe=new SecureSocket(this.controlPipe,key);
 	}
 	public SecurityControlSocket(int port) throws IOException {
 		super(port);
 		key=DECKey.getdefultKey();
+		this.controlPipe=new SecureSocket(this.controlPipe,key);
 	}
 	public SecurityControlSocket(String ip,int port) throws IOException {
 		super(ip,port);
 		key=DECKey.getdefultKey();
+		this.controlPipe=new SecureSocket(this.controlPipe,key);
 	}
 	public HashMap<String,BiUnit<InputStream,OutputStream>> loadSecurePipes(String[] keys,KeyUnit keyUnit) throws IOException{
 		HashMap<String,BiUnit<InputStream,OutputStream>> rawdata=super.loadPipes(keys);

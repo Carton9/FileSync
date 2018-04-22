@@ -1,9 +1,11 @@
 package com.cartion.filesync.security;
 
-public interface KeyUnit {
-	public int decryptSize(int originSize);
-	public int encryptSize(int encryptionSize);
-	public byte[] decrypt(byte[] in);
-	public byte[] encrypt(byte[] in);
-	public String getCypherType();
+import java.io.Serializable;
+
+public abstract class KeyUnit implements Serializable{
+	public abstract int decryptSize(int originSize);
+	public abstract int encryptSize(int encryptionSize);
+	public abstract byte[] decrypt(byte[] in);
+	public abstract byte[] encrypt(byte[] in);
+	public abstract String getCypherType();
 }

@@ -44,7 +44,7 @@ public class ControlSocket implements AutoCloseable{
 	private final static String FRAMEREQUEST="FMRQ";
 	private final static int commendLength=4;
 	private final static int MaxDataPipePerFrame=1000;
-	private Socket controlPipe;
+	protected Socket controlPipe;
 	private ServerSocket controlListenerPipe;
 	public HashMap<String,Socket> dataSocketMap;
 	public HashMap<Socket,ObjectLock> LockMap;

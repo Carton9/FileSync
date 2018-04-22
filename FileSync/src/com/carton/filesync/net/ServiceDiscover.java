@@ -13,6 +13,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import com.cartion.filesync.security.SHALog;
+import com.cartion.filesync.security.SecurityLog;
 import com.carton.filesync.common.util.GeneralService;
 
 public class ServiceDiscover implements GeneralService {

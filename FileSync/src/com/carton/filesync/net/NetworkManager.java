@@ -4,7 +4,9 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class NetworkManager {
+import com.carton.filesync.common.util.GeneralManager;
+
+public class NetworkManager extends GeneralManager {
 	protected HashMap<String,MachineRecord> machineMap;
 	public NetworkManager() {
 		machineMap=new HashMap<String,MachineRecord>();
@@ -35,5 +37,15 @@ public class NetworkManager {
 	}
 	public boolean removeMachine(String id) {
 		return machineMap.remove(id) != null;
+	}
+	@Override
+	public <T extends GeneralManager> T loadManager(byte[] data) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public <T extends GeneralManager> byte[] saveManager(T Manager) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

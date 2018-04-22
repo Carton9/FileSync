@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
+import com.cartion.filesync.security.SHALog;
 import com.carton.filesync.common.util.GeneralServiceExecutePool;
 import com.carton.filesync.file.UniversalFileIO;
 import com.carton.filesync.net.*;

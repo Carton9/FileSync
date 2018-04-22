@@ -18,7 +18,7 @@ import javax.crypto.NoSuchPaddingException;
 
 import com.carton.filesync.common.util.BiUnit;
 
-public class RSAKey implements KeyUnit {
+public class RSAKey extends KeyUnit {
 	private RSAPublicKey publicKey;
 	private RSAPrivateKey privateKey;
 	int mode;

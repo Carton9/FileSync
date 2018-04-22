@@ -1,4 +1,4 @@
-package com.carton.filesync.net;
+package com.cartion.filesync.security;
 
 import java.io.Serializable;
 
