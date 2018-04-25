@@ -1,15 +1,27 @@
 package com.carton.filesync.common.util;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 
-public abstract class GeneralManager implements Serializable{
-	public abstract <T extends GeneralManager> T loadManager(byte data[]);
-	public abstract <T extends GeneralManager> byte[] saveManager(T Manager);
-	public static <T extends GeneralManager> void saveManagerToFile(File file,T manager) {
-		
+public abstract class GeneralManager{
+	public GeneralManager(byte[] config) {
+		this.loadConfiguration(config);
 	}
-	public static <T extends GeneralManager> T loadManagerFromFile(File file) {
-		return null;
+	public GeneralManager(File file) {
+		loadManagerFromFile(file);
+	}
+	public GeneralManager() {
+	}
+	
+	public abstract void loadConfiguration(byte data[]);
+	public abstract byte[] saveConfiguration();
+	public void saveManagerToFile(File file) throws IOException {
+		FileOutputStream fos=new FileOutputStream(file);
+		fos.write(this.saveConfiguration());
+		fos.close();
+	}
+	public void loadManagerFromFile(File file) {
 	}
 }

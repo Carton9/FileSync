@@ -5,7 +5,7 @@ import java.io.Serializable;
 import com.carton.filesync.net.NetworkVerifier;
 
 public abstract class SecurityLog implements NetworkVerifier,Serializable{
-	protected static final int TIMEOUT=10*60*1000;//10 min
+	protected static final int TIMEOUT=60*60*1000;//10 min
 	protected String id;
 	protected String parent;
 	protected String connecterID[];

@@ -1,5 +1,6 @@
 package com.carton.filesync.net;
 
+import java.io.StringReader;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,6 +9,8 @@ import com.carton.filesync.common.util.GeneralManager;
 
 public class NetworkManager extends GeneralManager {
 	protected HashMap<String,MachineRecord> machineMap;
+	private int MaxControlSocket=1000;
+	private ArrayList<String> bandIP=new ArrayList<String>();
 	public NetworkManager() {
 		machineMap=new HashMap<String,MachineRecord>();
 	}
@@ -20,8 +23,9 @@ public class NetworkManager extends GeneralManager {
 				if(i.equals(record.getId()))
 					return false;
 			}
+			if(bandIP.contains(record.getIp().getHostAddress()))
+				return false;
 			machineMap.put(record.getId(), record);
-		//	System.out.println("get " +machineMap.size());
 		}
 		return true;
 	}
@@ -38,14 +42,33 @@ public class NetworkManager extends GeneralManager {
 	public boolean removeMachine(String id) {
 		return machineMap.remove(id) != null;
 	}
-	@Override
-	public <T extends GeneralManager> T loadManager(byte[] data) {
-		// TODO Auto-generated method stub
-		return null;
+	public void addBandIP(InetAddress ip) {
+		this.addBandIP(ip.getHostAddress());
+	}
+	public void addBandIP(String ip) {
+		bandIP.add(ip);
 	}
 	@Override
-	public <T extends GeneralManager> byte[] saveManager(T Manager) {
+	public void loadConfiguration(byte[] data) {
 		// TODO Auto-generated method stub
-		return null;
+		String info=new String(data);
+		String infos[]=info.split("\n");
+		for(int i=0;i<infos.length;i++) {
+			String item[]=infos[i].split(": ");
+			if(item[0].equals("MaxControlSocket")) 
+				MaxControlSocket=Integer.parseInt(item[1].replaceAll(" ", "").trim());
+			if(item[0].equals("Bad IP"))
+				bandIP.add(item[1]);
+		}
+	}
+	@Override
+	public byte[] saveConfiguration() {
+		// TODO Auto-generated method stub
+		StringBuffer builder=new StringBuffer();
+		builder.append("MaxControlSocket: "+MaxControlSocket+"\n");
+		for(int i=0;i<bandIP.size();i++) {
+			builder.append("Bad IP: "+bandIP.get(i)+"\n");
+		}
+		return builder.toString().getBytes();
 	}
 }
