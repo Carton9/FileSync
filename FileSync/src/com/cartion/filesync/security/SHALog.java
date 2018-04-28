@@ -31,6 +31,16 @@ public class SHALog extends SecurityLog {
 		}
 		return false;
 	}
+	private String getMatchID(String id) {
+		synchronized(connecterID) {
+			for(int i=0;i<connecterCount;i++) {
+				String currentID=SHA512(connecterID[i]+(System.currentTimeMillis()/this.TIMEOUT));
+				if(currentID.equals(id))
+					return currentID;
+			}
+		}
+		return null;
+	}
 	@Override
 	public boolean isConnecter(String connecter) {
 		// TODO Auto-generated method stub
@@ -91,5 +101,17 @@ public class SHALog extends SecurityLog {
 	public String generateSign(long time) {
 		// TODO Auto-generated method stub
 		return SHA512(id+time);
+	}
+	@Override
+	public String generateToken(String id) {
+		// TODO Auto-generated method stub
+		return generateToken(this.TRANSFER_TOKEN_TIMEOUT,id);
+	}
+	@Override
+	public String generateToken(long time, String id) {
+		// TODO Auto-generated method stub
+		if(this.veriftyID(id))
+			return SHA512(getMatchID(id)+(System.currentTimeMillis()/time));
+		return null;
 	}
 }

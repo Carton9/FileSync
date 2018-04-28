@@ -1,18 +1,29 @@
 package com.carton.filesync.net;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.cartion.filesync.security.KeyUnit;
 import com.carton.filesync.common.util.GeneralManager;
 
 public class NetworkManager extends GeneralManager {
 	protected HashMap<String,MachineRecord> machineMap;
-	private int MaxControlSocket=1000;
+	protected HashMap<String,DuplexControlSocket> connectionMap;
+	private int MaxControlSocket=-1;
+	private int ScannSpeed=-1;
 	private ArrayList<String> bandIP=new ArrayList<String>();
 	public NetworkManager() {
 		machineMap=new HashMap<String,MachineRecord>();
+		connectionMap=new HashMap<String,DuplexControlSocket>();
+	}
+	public NetworkManager(int ScannSpeed,int MaxControlSocket) {
+		this();
+		this.ScannSpeed=ScannSpeed;
+		this.MaxControlSocket=MaxControlSocket;
+		
 	}
 	public boolean logMachine(MachineRecord record) {
 		
@@ -42,6 +53,23 @@ public class NetworkManager extends GeneralManager {
 	public boolean removeMachine(String id) {
 		return machineMap.remove(id) != null;
 	}
+	
+	public DuplexControlSocket getTCPConnection(String id,KeyUnit key) throws IOException, InterruptedException {
+		synchronized(machineMap) {
+			if(connectionMap.size()>this.MaxControlSocket)
+				return null;
+			MachineRecord record=machineMap.get(id);
+			DuplexControlSocket dcs=new DuplexControlSocket(record.getIp(),record.getPort(),key);
+			connectionMap.put(id, dcs);
+			return dcs;
+		}
+	}
+	public void closeTCPConnection(String id) throws Exception {
+		synchronized(machineMap) {
+			connectionMap.get(id).close();
+		}
+	}
+	
 	public void addBandIP(InetAddress ip) {
 		this.addBandIP(ip.getHostAddress());
 	}

@@ -5,7 +5,8 @@ import java.io.Serializable;
 import com.carton.filesync.net.NetworkVerifier;
 
 public abstract class SecurityLog implements NetworkVerifier,Serializable{
-	protected static final int TIMEOUT=60*60*1000;//10 min
+	protected static final int TIMEOUT=10*60*1000;//10 min
+	protected static final long TRANSFER_TOKEN_TIMEOUT=5*60*60*1000l;//5h
 	protected String id;
 	protected String parent;
 	protected String connecterID[];
@@ -40,33 +41,10 @@ public abstract class SecurityLog implements NetworkVerifier,Serializable{
 			return false;
 		}
 	}
-	public synchronized boolean logPort(int port) {
-		synchronized(portsLog) {
-			if(veriftyPort(port))
-				portsLog[port]=1;
-			else
-				return false;
-			return true;
-		}
-	}
-	public synchronized boolean logUsingPort(int port) {
-		synchronized(portsLog) {
-			if(portsLog[port]==1) {
-				portsLog[port]=-1;
-				return true;
-			}
-			return false;	
-		}
-	}
-	public synchronized void freePort(int port) {
-		synchronized(portsLog) {
-			if(portsLog[port]!=0) {
-				portsLog[port]=0;
-			}
-		}
-	}
 	public abstract String generateSign();
 	public abstract String generateSign(long time);
+	public abstract String generateToken(String id);
+	public abstract String generateToken(long time,String id);
 	public abstract String addNewConnecter();
 	public String getConnecter(int count,long time) {
 		if(count<0&&count>=connecterID.length)
@@ -91,5 +69,30 @@ public abstract class SecurityLog implements NetworkVerifier,Serializable{
 			log=new SHALog(informations[1]);
 		}
 		return log;
+	}
+	public synchronized boolean logPort(int port) {
+		synchronized(portsLog) {
+			if(veriftyPort(port))
+				portsLog[port]=1;
+			else
+				return false;
+			return true;
+		}
+	}
+	public synchronized boolean logUsingPort(int port) {
+		synchronized(portsLog) {
+			if(portsLog[port]==1) {
+				portsLog[port]=-1;
+				return true;
+			}
+			return false;	
+		}
+	}
+	public synchronized void freePort(int port) {
+		synchronized(portsLog) {
+			if(portsLog[port]!=0) {
+				portsLog[port]=0;
+			}
+		}
 	}
 }

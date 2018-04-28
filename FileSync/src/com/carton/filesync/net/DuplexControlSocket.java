@@ -12,6 +12,7 @@ public class DuplexControlSocket implements AutoCloseable{
 	ControlSocket Csocket;
 	Thread PortListener;
 	Thread PipeListener;
+	private boolean isALive;
 	public DuplexControlSocket(InetAddress ip,int port,KeyUnit key) throws IOException, InterruptedException {
 		Thread clientInit=null;
 		Thread ServerInit=null;
@@ -88,6 +89,10 @@ public class DuplexControlSocket implements AutoCloseable{
 		};
 		PortListener.start();
 		PipeListener.start();
+		isALive=true;
+	}
+	public boolean isALive() {
+		return this.isALive;
 	}
 	public DuplexControlSocket(String ip,int port,KeyUnit key) throws IOException, InterruptedException {
 		this(InetAddress.getByName(ip),port,key);
@@ -120,5 +125,6 @@ public class DuplexControlSocket implements AutoCloseable{
 		}
 		PortListener.stop();
 		PipeListener.stop();
+		isALive=false;
 	}
 }
